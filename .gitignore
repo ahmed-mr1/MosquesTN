@@ -1,0 +1,14 @@
+﻿# Root ignores
+node_modules/
+dist/
+build/
+.env
+.env.*
+*.log
+.DS_Store
+.idea/
+.vscode/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/

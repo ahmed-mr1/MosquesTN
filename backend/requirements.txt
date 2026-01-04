@@ -1,0 +1,6 @@
+﻿Flask
+Flask-RESTful
+Flask-JWT-Extended
+psycopg2-binary
+SQLAlchemy
+Flask-Migrate
