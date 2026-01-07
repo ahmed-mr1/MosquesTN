@@ -4,3 +4,7 @@ Flask-JWT-Extended
 psycopg2-binary
 SQLAlchemy
 Flask-Migrate
+flask-smorest
+marshmallow
+apispec
+flask-cors

@@ -1,0 +1,16 @@
+from flask import Flask
+from ..extensions import api
+from .mosques import mosques_bp
+from .meta import meta_bp
+from .suggestions import suggestions_bp
+from .confirmations import confirmations_bp
+from .moderation import moderation_bp
+
+
+def register_blueprints(app: Flask):
+	api.register_blueprint(mosques_bp)
+	api.register_blueprint(meta_bp)
+	api.register_blueprint(suggestions_bp)
+	api.register_blueprint(confirmations_bp)
+	api.register_blueprint(moderation_bp)
+
