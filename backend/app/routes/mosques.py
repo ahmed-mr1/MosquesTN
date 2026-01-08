@@ -1,5 +1,5 @@
 from math import cos, radians
-from flask_smorest import Blueprint
+from flask_smorest import Blueprint, abort
 from ..models import Mosque
 from ..schemas.mosque import MosqueSchema, MosqueListQuerySchema, NearbyQuerySchema
 
@@ -35,7 +35,7 @@ def list_mosques(args):
 def get_mosque(mosque_id: int):
     m = Mosque.query.filter_by(id=mosque_id, approved=True).first()
     if not m:
-        mosques_bp.abort(404, message="Mosque not found")
+        abort(404, message="Mosque not found")
     return m
 
 

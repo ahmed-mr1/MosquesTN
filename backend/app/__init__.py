@@ -1,6 +1,6 @@
-from flask import Flask
+from flask import Flask, jsonify
 from .config import config_by_name
-from .extensions import db, migrate, jwt, api
+from .extensions import db, migrate, jwt, api, cors
 
 
 def create_app(config_name: str = "development") -> Flask:
@@ -22,10 +22,16 @@ def create_app(config_name: str = "development") -> Flask:
 	migrate.init_app(app, db)
 	jwt.init_app(app)
 	api.init_app(app)
+	cors.init_app(app)
 
 	# Register blueprints
 	from .routes import register_blueprints
 	register_blueprints(app)
+
+	# JSON error handling for 404
+	@app.errorhandler(404)
+	def handle_404(_e):
+		return jsonify({"message": "Not found"}), 404
 
 	# Quick dev: create tables if using SQLite and not migrated yet
 	with app.app_context():
