@@ -22,6 +22,9 @@ class MosqueSuggestion(db.Model):
     facilities_json = db.Column(db.JSON, default=dict)
     facilities_details = db.Column(db.String(500))
 
+    jumuah_time = db.Column(db.String(20))
+    eid_info = db.Column(db.String(255))
+
     status = db.Column(db.String(32), nullable=False, default="pending_ai_review")
     confirmations_count = db.Column(db.Integer, nullable=False, default=0)
 

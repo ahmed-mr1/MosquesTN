@@ -7,6 +7,7 @@ from .confirmations import confirmations_bp
 from .moderation import moderation_bp
 from .auth import auth_bp
 from .reviews import reviews_bp
+from .edits import edits_bp
 
 
 def register_blueprints(app: Flask):
@@ -17,4 +18,6 @@ def register_blueprints(app: Flask):
 	api.register_blueprint(moderation_bp)
 	api.register_blueprint(auth_bp)
 	api.register_blueprint(reviews_bp)
+	api.register_blueprint(edits_bp)
+
 

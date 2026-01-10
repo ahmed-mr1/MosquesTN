@@ -1,11 +1,12 @@
 from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt
 from ..extensions import db
-from ..models import MosqueSuggestion
+from ..models import MosqueSuggestion, Mosque, MosqueEditSuggestion
 from ..services.moderation import approve_suggestion
 from ..schemas.suggestion import MosqueSuggestionSchema
 from ..models import Review
 from ..schemas.review import ReviewSchema
+from ..schemas.edit import MosqueEditSuggestionSchema
 
 
 moderation_bp = Blueprint(
@@ -101,3 +102,56 @@ def list_reviews():
             abort(400, message="mosque_id must be an integer")
     items = q.order_by(Review.created_at.desc()).all()
     return items
+
+
+@moderation_bp.route("/edits/<int:edit_id>/approve", methods=["POST"])
+@moderation_bp.response(200, MosqueEditSuggestionSchema)
+@jwt_required()
+def approve_edit(edit_id: int):
+    claims = get_jwt() or {}
+    role = claims.get("role")
+    if role not in ("admin", "moderator"):
+        abort(403, message="Moderator/Admin role required")
+    s = MosqueEditSuggestion.query.get(edit_id)
+    if not s:
+        abort(404, message="Edit suggestion not found")
+    m = Mosque.query.get(s.mosque_id)
+    if not m:
+        abort(404, message="Mosque not found")
+    patch = s.patch_json or {}
+    if "address" in patch:
+        m.address = patch.get("address")
+    if "neighborhood" in patch:
+        m.neighborhood = patch.get("neighborhood")
+    if "facilities" in patch:
+        m.facilities_json = patch.get("facilities") or {}
+    if "facilities_details" in patch:
+        m.facilities_details = patch.get("facilities_details")
+    if "iqama_times" in patch:
+        m.iqama_times_json = {**(m.iqama_times_json or {}), **(patch.get("iqama_times") or {})}
+    if "jumuah_time" in patch:
+        m.jumuah_time = patch.get("jumuah_time")
+    if "eid_info" in patch:
+        m.eid_info = patch.get("eid_info")
+    s.status = "approved"
+    db.session.commit()
+    return s
+
+
+@moderation_bp.route("/edits/<int:edit_id>/reject", methods=["POST"])
+@moderation_bp.response(200, MosqueEditSuggestionSchema)
+@jwt_required()
+def reject_edit(edit_id: int):
+    claims = get_jwt() or {}
+    role = claims.get("role")
+    if role not in ("admin", "moderator"):
+        abort(403, message="Moderator/Admin role required")
+    s = MosqueEditSuggestion.query.get(edit_id)
+    if not s:
+        abort(404, message="Edit suggestion not found")
+    s.status = "rejected"
+    db.session.commit()
+    return s
+
+
+## Iqama moderation removed; iqama updates now go through mosque edit suggestions.

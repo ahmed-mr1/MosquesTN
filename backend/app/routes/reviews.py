@@ -4,6 +4,7 @@ from ..extensions import db
 from ..models import Review, Mosque
 from ..schemas.review import ReviewCreateSchema, ReviewSchema, ReviewListQuerySchema
 from ..utils.reviews import sanitize_criteria
+from ..services.ai_moderation import moderate_text
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 
@@ -38,13 +39,21 @@ class MosqueReviewsResource(MethodView):
                 created_by_user_id = int(identity)
             except (TypeError, ValueError):
                 abort(401, message="Invalid token identity")
+        mod_input = " ".join([
+            str(data["rating"]),
+            " ".join([f"{k}:{v}" for k, v in (data.get("criteria") or {}).items()]),
+            data.get("comment") or "",
+        ])
+        decision = moderate_text(mod_input)
+        status = "pending_approval" if decision.get("decision") == "valid" else "rejected"
+
         r = Review(
             mosque_id=mosque_id,
             rating=data["rating"],
             criteria=sanitize_criteria(data.get("criteria")),
             comment=data.get("comment"),
             created_by_user_id=created_by_user_id,
-            status="pending",
+            status=status,
         )
         db.session.add(r)
         db.session.commit()

@@ -1,6 +1,12 @@
 from flask import Flask, jsonify
 from .config import config_by_name
 from .extensions import db, migrate, jwt, api, cors
+try:
+	from dotenv import load_dotenv
+	load_dotenv()
+except Exception:
+	# python-dotenv is optional; if missing, environment variables must be set externally
+	pass
 
 
 def create_app(config_name: str = "development") -> Flask:

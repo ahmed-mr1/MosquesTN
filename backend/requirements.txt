@@ -8,3 +8,6 @@ flask-smorest
 marshmallow
 apispec
 flask-cors
+google-generativeai
+requests
+python-dotenv

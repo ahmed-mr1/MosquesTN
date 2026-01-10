@@ -14,6 +14,8 @@ class MosqueSuggestionCreateSchema(Schema):
     longitude = fields.Float(load_default=None)
     facilities = fields.Dict(keys=fields.Str(), values=fields.Boolean(), load_default=dict)
     facilities_details = fields.Str(load_default=None)
+    jumuah_time = fields.Str(load_default=None)
+    eid_info = fields.Str(load_default=None)
 
 
 class MosqueSuggestionSchema(Schema):
@@ -30,6 +32,8 @@ class MosqueSuggestionSchema(Schema):
     longitude = fields.Float(allow_none=True)
     facilities = fields.Dict(keys=fields.Str(), values=fields.Boolean(), attribute="facilities_json")
     facilities_details = fields.Str(allow_none=True)
+    jumuah_time = fields.Str(allow_none=True)
+    eid_info = fields.Str(allow_none=True)
     status = fields.Str()
     confirmations_count = fields.Int()
     created_at = fields.DateTime()

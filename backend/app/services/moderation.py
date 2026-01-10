@@ -18,9 +18,14 @@ def approve_suggestion(s: MosqueSuggestion) -> Mosque:
         longitude=s.longitude,
         facilities_json=s.facilities_json or {},
         facilities_details=s.facilities_details,
+        jumuah_time=s.jumuah_time,
+        eid_info=s.eid_info,
         approved=True,
     )
     db.session.add(m)
     s.status = "approved"
     db.session.flush()
     return m
+
+
+# Iqama approval removed; handled via generic mosque edit approvals.

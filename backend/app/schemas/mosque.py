@@ -21,6 +21,7 @@ class MosqueSchema(Schema):
     longitude = fields.Float(allow_none=True)
     facilities = fields.Dict(keys=fields.Str(), values=fields.Boolean(), attribute="facilities_json")
     facilities_details = fields.Str(allow_none=True)
+    iqama_times = fields.Dict(keys=fields.Str(), values=fields.Str(), attribute="iqama_times_json")
     jumuah_time = fields.Str(allow_none=True)
     eid_info = fields.Str(allow_none=True)
     approved = fields.Bool(dump_only=True)
