@@ -32,10 +32,9 @@ class MosqueSuggestionsResource(MethodView):
     @suggestions_bp.response(201, MosqueSuggestionSchema)
     @jwt_required()
     def post(self, data):
-        name = (data.get("name") or "").strip()
         governorate = (data.get("governorate") or "").strip()
-        if not name or not governorate:
-            abort(400, message="'name' and 'governorate' are required")
+        if not governorate:
+            abort(400, message="'governorate' is required")
 
         facilities = sanitize_facilities(data.get("facilities"))
 
@@ -46,7 +45,6 @@ class MosqueSuggestionsResource(MethodView):
             abort(401, message="Invalid token identity")
 
         s = MosqueSuggestion(
-            name=name,
             arabic_name=data.get("arabic_name"),
             type=data.get("type"),
             governorate=governorate,
@@ -65,7 +63,7 @@ class MosqueSuggestionsResource(MethodView):
 
         # AI moderation
         mod_input = " ".join([
-            name,
+            data.get("arabic_name") or "",
             data.get("arabic_name") or "",
             data.get("type") or "",
             governorate,

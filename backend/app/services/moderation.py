@@ -6,7 +6,6 @@ APPROVAL_CONFIRMATION_THRESHOLD = 3
 
 def approve_suggestion(s: MosqueSuggestion) -> Mosque:
     m = Mosque(
-        name=s.name,
         arabic_name=s.arabic_name,
         type=s.type,
         governorate=s.governorate,

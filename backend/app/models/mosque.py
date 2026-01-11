@@ -6,7 +6,6 @@ class Mosque(db.Model):
     __tablename__ = "mosques"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
     arabic_name = db.Column(db.String(255))
     type = db.Column(db.String(50))  # مسجد / جامع / مصلى
 
@@ -33,7 +32,6 @@ class Mosque(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
             "arabic_name": self.arabic_name,
             "type": self.type,
             "governorate": self.governorate,

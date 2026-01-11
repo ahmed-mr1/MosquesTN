@@ -85,8 +85,8 @@ def fetch_overpass(query: str) -> Dict[str, Any]:
 
 def normalize_item(el: Dict[str, Any]) -> Dict[str, Any]:
     tags = el.get("tags", {})
-    name = tags.get("name") or tags.get("name:en") or tags.get("name:ar") or ""
-    arabic_name = tags.get("name:ar")
+    base_name = tags.get("name") or tags.get("name:en") or tags.get("name:ar") or ""
+    arabic_name = tags.get("name:ar") or base_name
     lat = el.get("lat") or el.get("center", {}).get("lat")
     lon = el.get("lon") or el.get("center", {}).get("lon")
     address_parts = [
@@ -100,8 +100,7 @@ def normalize_item(el: Dict[str, Any]) -> Dict[str, Any]:
     neighborhood = tags.get("addr:suburb") or tags.get("addr:neighbourhood")
 
     return {
-        "name": (name or "").strip() or "Unnamed Mosque",
-        "arabic_name": arabic_name,
+        "arabic_name": (arabic_name or "").strip() or None,
         "type": "مسجد",
         "governorate": governorate,
         "delegation": None,
@@ -113,7 +112,7 @@ def normalize_item(el: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def find_existing(lat: float, lon: float, name: str) -> Mosque | None:
+def find_existing(lat: float, lon: float, arabic_name: str | None) -> Mosque | None:
     if lat is None or lon is None:
         return None
     # Quick bounding box ±0.002 ~ 220m
@@ -127,7 +126,7 @@ def find_existing(lat: float, lon: float, name: str) -> Mosque | None:
         except Exception:
             d = 999999
         if d < 150:  # within 150m
-            if (name and m.name and name.lower() == m.name.lower()) or not name:
+            if arabic_name and m.arabic_name and arabic_name.lower() == m.arabic_name.lower():
                 return m
     return None
 
@@ -140,11 +139,11 @@ def import_mosques(items: List[Dict[str, Any]]) -> Dict[str, int]:
         data = normalize_item(el)
         lat = data.get("latitude")
         lon = data.get("longitude")
-        name = data.get("name")
+        arabic_name = data.get("arabic_name")
         if lat is None or lon is None:
             skipped += 1
             continue
-        existing = find_existing(lat, lon, name)
+        existing = find_existing(lat, lon, arabic_name)
         if existing:
             # Optionally update missing fields
             changed = False
@@ -160,7 +159,6 @@ def import_mosques(items: List[Dict[str, Any]]) -> Dict[str, int]:
                 skipped += 1
             continue
         m = Mosque(
-            name=data["name"],
             arabic_name=data.get("arabic_name"),
             type=data.get("type"),
             governorate=data.get("governorate") or "Unknown",
