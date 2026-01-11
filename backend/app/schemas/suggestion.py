@@ -2,7 +2,6 @@ from marshmallow import Schema, fields
 
 
 class MosqueSuggestionCreateSchema(Schema):
-    name = fields.Str(required=True)
     arabic_name = fields.Str(load_default=None)
     type = fields.Str(load_default=None)
     governorate = fields.Str(required=True)
@@ -20,7 +19,6 @@ class MosqueSuggestionCreateSchema(Schema):
 
 class MosqueSuggestionSchema(Schema):
     id = fields.Int(dump_only=True)
-    name = fields.Str()
     arabic_name = fields.Str(allow_none=True)
     type = fields.Str(allow_none=True)
     governorate = fields.Str()

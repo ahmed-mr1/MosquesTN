@@ -9,7 +9,6 @@ class FacilitiesMapSchema(Schema):
 
 class MosqueSchema(Schema):
     id = fields.Int(dump_only=True)
-    name = fields.Str(required=True)
     arabic_name = fields.Str(allow_none=True)
     type = fields.Str(allow_none=True)
     governorate = fields.Str(required=True)
