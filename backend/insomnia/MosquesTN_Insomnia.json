@@ -1,0 +1,55 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-01-11T00:00:00.000Z",
+  "__export_source": "copilot",
+  "resources": [
+    {"_id": "wrk_all", "_type": "workspace", "name": "Tunisian Mosques API", "scope": "collection"},
+    {"_id": "env_base", "_type": "environment", "parentId": "wrk_all", "name": "Base", "data": {"baseUrl": "http://localhost:5000", "token": ""}},
+
+    {"_id": "fld_docs", "_type": "request_group", "parentId": "wrk_all", "name": "Docs"},
+    {"_id": "req_swagger_ui", "_type": "request", "parentId": "fld_docs", "name": "Swagger UI", "method": "GET", "url": "{{ baseUrl }}/swagger-ui"},
+    {"_id": "req_openapi", "_type": "request", "parentId": "fld_docs", "name": "OpenAPI JSON", "method": "GET", "url": "{{ baseUrl }}/openapi.json"},
+
+    {"_id": "fld_meta", "_type": "request_group", "parentId": "wrk_all", "name": "Meta"},
+    {"_id": "req_facilities", "_type": "request", "parentId": "fld_meta", "name": "GET /meta/facilities", "method": "GET", "url": "{{ baseUrl }}/meta/facilities"},
+
+    {"_id": "fld_auth", "_type": "request_group", "parentId": "wrk_all", "name": "Auth"},
+    {"_id": "req_auth_user", "_type": "request", "parentId": "fld_auth", "name": "POST /auth/firebase/verify (user)", "method": "POST", "url": "{{ baseUrl }}/auth/firebase/verify", "headers": [{"name":"Content-Type","value":"application/json"}], "body": {"mimeType":"application/json","text":"{\n  \"id_token\": \"demo\"\n}"}},
+    {"_id": "req_auth_admin", "_type": "request", "parentId": "fld_auth", "name": "POST /auth/firebase/verify (admin)", "method": "POST", "url": "{{ baseUrl }}/auth/firebase/verify", "headers": [{"name":"Content-Type","value":"application/json"}], "body": {"mimeType":"application/json","text":"{\n  \"id_token\": \"admin\"\n}"}},
+    {"_id": "req_auth_me", "_type": "request", "parentId": "fld_auth", "name": "GET /auth/me", "method": "GET", "url": "{{ baseUrl }}/auth/me", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+
+    {"_id": "fld_mosques", "_type": "request_group", "parentId": "wrk_all", "name": "Mosques"},
+    {"_id": "req_mosques_list", "_type": "request", "parentId": "fld_mosques", "name": "GET /mosques", "method": "GET", "url": "{{ baseUrl }}/mosques?governorate=Tunis&limit=20&offset=0"},
+    {"_id": "req_mosque_get", "_type": "request", "parentId": "fld_mosques", "name": "GET /mosques/{id}", "method": "GET", "url": "{{ baseUrl }}/mosques/1"},
+    {"_id": "req_mosques_nearby", "_type": "request", "parentId": "fld_mosques", "name": "GET /mosques/nearby", "method": "GET", "url": "{{ baseUrl }}/mosques/nearby?lat=36.8065&lng=10.1815&radius=5"},
+
+    {"_id": "fld_reviews", "_type": "request_group", "parentId": "wrk_all", "name": "Reviews"},
+    {"_id": "req_reviews_list", "_type": "request", "parentId": "fld_reviews", "name": "GET /mosques/{id}/reviews", "method": "GET", "url": "{{ baseUrl }}/mosques/1/reviews?limit=20&offset=0"},
+    {"_id": "req_reviews_post", "_type": "request", "parentId": "fld_reviews", "name": "POST /mosques/{id}/reviews (anonymous or bearer)", "method": "POST", "url": "{{ baseUrl }}/mosques/1/reviews", "headers": [{"name":"Content-Type","value":"application/json"}], "body": {"mimeType":"application/json","text":"{\n  \"rating\": 4,\n  \"criteria\": { \"cleanliness\": 5, \"accessibility\": 3 },\n  \"comment\": \"Nice mosque, clean and accessible.\"\n}"}},
+
+    {"_id": "fld_suggestions", "_type": "request_group", "parentId": "wrk_all", "name": "Suggestions"},
+    {"_id": "req_sugg_create", "_type": "request", "parentId": "fld_suggestions", "name": "POST /suggestions/mosques (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/suggestions/mosques", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"},{"name":"Content-Type","value":"application/json"}], "body": {"mimeType":"application/json","text":"{\n  \"arabic_name\": \"مسجد النور\",\n  \"type\": \"mosque\",\n  \"governorate\": \"Tunis\",\n  \"delegation\": \"Tunis Medina\",\n  \"city\": \"Tunis\",\n  \"neighborhood\": \"Bab Bhar\",\n  \"address\": \"12 Rue de la Mosquée, Tunis\",\n  \"latitude\": 36.8065,\n  \"longitude\": 10.1815,\n  \"facilities\": {\n    \"women_area\": true,\n    \"parking\": false,\n    \"accessibility\": true\n  },\n  \"facilities_details\": \"Accessible ramp at main entrance.\",\n  \"jumuah_time\": \"13:15\",\n  \"eid_info\": \"Eid prayer at 06:30 in yard\"\n}"}},
+    {"_id": "req_sugg_mine", "_type": "request", "parentId": "fld_suggestions", "name": "GET /suggestions/mosques (mine)", "method": "GET", "url": "{{ baseUrl }}/suggestions/mosques", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+
+    {"_id": "fld_confirmations", "_type": "request_group", "parentId": "wrk_all", "name": "Confirmations"},
+    {"_id": "req_sugg_confirm", "_type": "request", "parentId": "fld_confirmations", "name": "POST /suggestions/{id}/confirmations (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/suggestions/1/confirmations", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+
+    {"_id": "fld_edits", "_type": "request_group", "parentId": "wrk_all", "name": "Edits"},
+    {"_id": "req_edit_create", "_type": "request", "parentId": "fld_edits", "name": "POST /suggestions/mosques/{id}/edits (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/suggestions/mosques/1/edits", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"},{"name":"Content-Type","value":"application/json"}], "body": {"mimeType":"application/json","text":"{\n  \"patch\": {\n    \"address\": \"Updated address\",\n    \"neighborhood\": \"New area\",\n    \"facilities\": {\n      \"women_area\": true\n    },\n    \"iqama_times\": {\n      \"fajr\": \"06:10\"\n    },\n    \"jumuah_time\": \"13:20\"\n  }\n}"}},
+    {"_id": "req_edit_confirm", "_type": "request", "parentId": "fld_edits", "name": "POST /suggestions/edits/{id}/confirmations (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/suggestions/edits/1/confirmations", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+
+    {"_id": "fld_moderation", "_type": "request_group", "parentId": "wrk_all", "name": "Moderation"},
+    {"_id": "req_mod_sugg_approve", "_type": "request", "parentId": "fld_moderation", "name": "POST /moderation/suggestions/{id}/approve (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/moderation/suggestions/1/approve", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_sugg_reject", "_type": "request", "parentId": "fld_moderation", "name": "POST /moderation/suggestions/{id}/reject (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/moderation/suggestions/1/reject", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_reviews_list", "_type": "request", "parentId": "fld_moderation", "name": "GET /moderation/reviews?status=pending (requires bearer)", "method": "GET", "url": "{{ baseUrl }}/moderation/reviews?status=pending", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_rev_approve", "_type": "request", "parentId": "fld_moderation", "name": "POST /moderation/reviews/{id}/approve (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/moderation/reviews/1/approve", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_rev_reject", "_type": "request", "parentId": "fld_moderation", "name": "POST /moderation/reviews/{id}/reject (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/moderation/reviews/1/reject", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_edit_approve", "_type": "request", "parentId": "fld_moderation", "name": "POST /moderation/edits/{id}/approve (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/moderation/edits/1/approve", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_edit_reject", "_type": "request", "parentId": "fld_moderation", "name": "POST /moderation/edits/{id}/reject (requires bearer)", "method": "POST", "url": "{{ baseUrl }}/moderation/edits/1/reject", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_delete_mosque", "_type": "request", "parentId": "fld_moderation", "name": "DELETE /moderation/mosques/{id} (requires bearer)", "method": "DELETE", "url": "{{ baseUrl }}/moderation/mosques/1", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_delete_suggestion", "_type": "request", "parentId": "fld_moderation", "name": "DELETE /moderation/suggestions/{id} (requires bearer)", "method": "DELETE", "url": "{{ baseUrl }}/moderation/suggestions/1", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_delete_review", "_type": "request", "parentId": "fld_moderation", "name": "DELETE /moderation/reviews/{id} (requires bearer)", "method": "DELETE", "url": "{{ baseUrl }}/moderation/reviews/1", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]},
+    {"_id": "req_mod_delete_edit", "_type": "request", "parentId": "fld_moderation", "name": "DELETE /moderation/edits/{id} (requires bearer)", "method": "DELETE", "url": "{{ baseUrl }}/moderation/edits/1", "headers": [{"name":"Authorization","value":"Bearer {{ token }}"}]}
+  ]
+}

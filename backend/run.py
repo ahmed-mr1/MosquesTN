@@ -1,9 +1,9 @@
 import os
-from app import create_app
 from dotenv import load_dotenv
 
-
-load_dotenv()
+# Load environment from .env BEFORE importing the app so config sees DATABASE_URL
+load_dotenv(override=True)
+from app import create_app
 
 
 def main():

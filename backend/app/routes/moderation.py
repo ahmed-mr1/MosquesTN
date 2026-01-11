@@ -2,6 +2,7 @@ from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt
 from ..extensions import db
 from ..models import MosqueSuggestion, Mosque, MosqueEditSuggestion
+from ..models import EditConfirmation
 from ..services.moderation import approve_suggestion
 from ..schemas.suggestion import MosqueSuggestionSchema
 from ..models import Review
@@ -155,3 +156,73 @@ def reject_edit(edit_id: int):
 
 
 ## Iqama moderation removed; iqama updates now go through mosque edit suggestions.
+
+
+# Delete endpoints (admin/moderator only)
+
+@moderation_bp.route("/suggestions/<int:suggestion_id>", methods=["DELETE"])
+@jwt_required()
+def delete_suggestion(suggestion_id: int):
+    claims = get_jwt() or {}
+    role = claims.get("role")
+    if role not in ("admin", "moderator"):
+        abort(403, message="Moderator/Admin role required")
+    s = MosqueSuggestion.query.get(suggestion_id)
+    if not s:
+        abort(404, message="Suggestion not found")
+    db.session.delete(s)
+    db.session.commit()
+    return {"message": "suggestion deleted", "id": suggestion_id}
+
+
+@moderation_bp.route("/reviews/<int:review_id>", methods=["DELETE"])
+@jwt_required()
+def delete_review(review_id: int):
+    claims = get_jwt() or {}
+    role = claims.get("role")
+    if role not in ("admin", "moderator"):
+        abort(403, message="Moderator/Admin role required")
+    r = Review.query.get(review_id)
+    if not r:
+        abort(404, message="Review not found")
+    db.session.delete(r)
+    db.session.commit()
+    return {"message": "review deleted", "id": review_id}
+
+
+@moderation_bp.route("/edits/<int:edit_id>", methods=["DELETE"])
+@jwt_required()
+def delete_edit(edit_id: int):
+    claims = get_jwt() or {}
+    role = claims.get("role")
+    if role not in ("admin", "moderator"):
+        abort(403, message="Moderator/Admin role required")
+    s = MosqueEditSuggestion.query.get(edit_id)
+    if not s:
+        abort(404, message="Edit suggestion not found")
+    db.session.delete(s)
+    db.session.commit()
+    return {"message": "edit deleted", "id": edit_id}
+
+
+@moderation_bp.route("/mosques/<int:mosque_id>", methods=["DELETE"])
+@jwt_required()
+def delete_mosque(mosque_id: int):
+    claims = get_jwt() or {}
+    role = claims.get("role")
+    if role not in ("admin", "moderator"):
+        abort(403, message="Moderator/Admin role required")
+    m = Mosque.query.get(mosque_id)
+    if not m:
+        abort(404, message="Mosque not found")
+    # Delete dependent rows to satisfy FKs
+    edits = MosqueEditSuggestion.query.filter_by(mosque_id=mosque_id).all()
+    if edits:
+        edit_ids = [e.id for e in edits]
+        EditConfirmation.query.filter(EditConfirmation.edit_id.in_(edit_ids)).delete(synchronize_session=False)
+        MosqueEditSuggestion.query.filter(MosqueEditSuggestion.id.in_(edit_ids)).delete(synchronize_session=False)
+    from ..models import Review as _Review
+    _Review.query.filter_by(mosque_id=mosque_id).delete(synchronize_session=False)
+    db.session.delete(m)
+    db.session.commit()
+    return {"message": "mosque deleted", "id": mosque_id}
