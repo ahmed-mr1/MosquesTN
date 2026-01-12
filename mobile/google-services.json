@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380593776022",
+    "project_id": "mosques-tn",
+    "storage_bucket": "mosques-tn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380593776022:android:20a506e5dcaede4c4c29b7",
+        "android_client_info": {
+          "package_name": "com.mosquestn.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3DzYDDfkzt6gZJR1j8TYF7dWw_EUfuzM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
