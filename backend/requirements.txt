@@ -8,7 +8,8 @@ flask-smorest
 marshmallow
 apispec
 flask-cors
-google-generativeai
+google-genai
 requests
 python-dotenv
 reverse_geocoder
+gunicorn
