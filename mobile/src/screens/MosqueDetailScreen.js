@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { getMosque, getMosqueReviews, postMosqueReview, confirmMosque } from '../services/api';
 
-export default function MosqueDetailScreen({ route }) {
+export default function MosqueDetailScreen({ route, navigation }) {
   const { id } = route.params || {};
   const [mosque, setMosque] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -108,27 +108,38 @@ export default function MosqueDetailScreen({ route }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Reviews</Text>
+        <Text style={styles.sectionTitle}>Reviews / التقييمات</Text>
         {reviews.length === 0 ? (
           <Text style={styles.muted}>No reviews yet.</Text>
         ) : (
           reviews.map((r) => (
             <View key={r.id} style={styles.review}>
-              <Text style={styles.reviewRating}>Rating: {r.rating}/5</Text>
+              <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+                <Text style={styles.reviewRating}>Rating: {r.rating}/5</Text>
+                <Text style={styles.reviewDate}>{r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}</Text>
+              </View>
+              {Object.keys(r.criteria || {}).length > 0 && (
+                <View style={styles.criteriaRow}>
+                  {Object.entries(r.criteria).map(([k, v]) => (
+                    <Text key={k} style={styles.criteriaTag}>{k}: {v}</Text>
+                  ))}
+                </View>
+              )}
               {!!r.content && <Text style={styles.reviewContent}>{r.content}</Text>}
-              {r.status && <Text style={styles.reviewStatus}>Status: {r.status}</Text>}
             </View>
           ))
         )}
       </View>
 
-      <TouchableOpacity style={[styles.btn, styles.primary]} onPress={submitQuickReview}>
-        <Text style={styles.btnText}>Leave quick 5★ review</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.btn, styles.secondary]} onPress={confirm}>
-        <Text style={styles.btnText}>Confirm this mosque exists</Text>
-      </TouchableOpacity>
+      {mosque.approved !== false ? (
+        <TouchableOpacity style={[styles.btn, styles.primary]} onPress={() => navigation.navigate('Review', { mosqueId: id, mosqueName: mosque.arabic_name })}>
+          <Text style={styles.btnText}>Write a Review / أكتب تقييم</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={[styles.btn, styles.secondary]} onPress={confirm}>
+          <Text style={styles.btnText}>Confirm this mosque exists / تأكيد وجود المسجد</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
@@ -146,8 +157,11 @@ const styles = StyleSheet.create({
   facItem: { flexDirection: 'row', alignItems: 'center', marginRight: 12, marginBottom: 8 },
   facText: { marginLeft: 6 },
   review: { paddingVertical: theme.spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },
-  reviewRating: { fontFamily: 'Cairo-Medium' },
-  reviewContent: { marginTop: 4 },
+  reviewRating: { fontFamily: 'Cairo-Medium', color: theme.colors.primary },
+  reviewDate: { fontSize: 12, color: theme.colors.muted },
+  criteriaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  criteriaTag: { fontSize: 10, backgroundColor: '#f0f0f0', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, color: theme.colors.text },
+  reviewContent: { marginTop: 4, fontFamily: 'Cairo-Regular', color: theme.colors.text },
   reviewStatus: { marginTop: 4, fontSize: 12, color: theme.colors.muted },
   btn: { marginTop: theme.spacing.lg, paddingVertical: theme.spacing.md, borderRadius: theme.radius.md, alignItems: 'center' },
   primary: { backgroundColor: theme.colors.primary },

@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Tunisian Mosques",
+    "slug": "tunisian-mosques",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -28,7 +28,8 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "backendBaseUrl": "https://mosquestn-api.azurewebsites.net"
+      "backendBaseUrl": "https://mosquestn-api.azurewebsites.net",
+      "geonamesUsername": "ahmedmrabet"
     }
   }
 }

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Switch, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Switch, TouchableOpacity, Alert, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { theme } from '../theme';
 import { suggestMosque } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useMosques } from '../context/MosquesContext';
+import { governorates as GOVS, fetchDelegations, fetchCities } from '../services/locations';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 
@@ -35,7 +36,15 @@ export default function AddMosqueScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const { mosques } = useMosques();
   const [govPickerOpen, setGovPickerOpen] = useState(false);
+  const [delPickerOpen, setDelPickerOpen] = useState(false);
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  const [typePickerOpen, setTypePickerOpen] = useState(false);
+  const [delegations, setDelegations] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loadingDel, setLoadingDel] = useState(false);
+  const [loadingCity, setLoadingCity] = useState(false);
+  const [searchDel, setSearchDel] = useState('');
+  const [searchCity, setSearchCity] = useState('');
   const [region, setRegion] = useState({ latitude: 34.0, longitude: 9.6, latitudeDelta: 6.0, longitudeDelta: 6.0 });
 
   useEffect(() => {
@@ -49,19 +58,62 @@ export default function AddMosqueScreen({ navigation }) {
 
   const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
-  const governorates = useMemo(() => {
-    const arr = Array.isArray(mosques) ? mosques : [];
-    const set = new Set();
-    for (const m of arr) { if (m?.governorate) set.add(m.governorate); }
-    return Array.from(set).sort((a,b)=>a.localeCompare(b));
-  }, [mosques]);
+  const governorates = GOVS;
 
-  const cities = useMemo(() => {
-    const arr = Array.isArray(mosques) ? mosques : [];
-    const set = new Set();
-    for (const m of arr) { if (m?.governorate === form.governorate && m?.city) set.add(m.city); }
-    return Array.from(set).sort((a,b)=>a.localeCompare(b));
-  }, [mosques, form.governorate]);
+  useEffect(() => {
+    (async () => {
+      setLoadingDel(true);
+      try {
+        if (form.governorate) {
+          const list = await fetchDelegations(form.governorate);
+          setDelegations(list);
+        } else {
+          setDelegations([]);
+        }
+      } finally {
+        setLoadingDel(false);
+      }
+      update('delegation', '');
+      update('city', '');
+      setCities([]);
+      setSearchDel('');
+      setSearchCity('');
+    })();
+  }, [form.governorate]);
+
+  useEffect(() => {
+    (async () => {
+      setLoadingCity(true);
+      try {
+        if (form.governorate && form.delegation) {
+          const list = await fetchCities(form.governorate, form.delegation);
+          setCities(list);
+        } else {
+          setCities([]);
+        }
+      } finally {
+        setLoadingCity(false);
+      }
+      update('city', '');
+      setSearchCity('');
+    })();
+  }, [form.delegation]);
+
+  const setLocationAndAddress = async (lat, lng) => {
+    update('latitude', String(lat));
+    update('longitude', String(lng));
+    setRegion({ ...region, latitude: lat, longitude: lng });
+    try {
+      const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      if (results && results.length > 0) {
+        const addr = results[0];
+        const fullAddr = [addr.street, addr.name, addr.subregion, addr.region, addr.city, addr.country].filter(Boolean).join(', ');
+        update('address', fullAddr);
+      }
+    } catch (e) {
+      // ignore geocode error
+    }
+  };
 
   const useCurrentLocation = async () => {
     try {
@@ -69,8 +121,7 @@ export default function AddMosqueScreen({ navigation }) {
       if (status !== 'granted') return Alert.alert('Permission denied', 'Location permission is required');
       const pos = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = pos.coords;
-      update('latitude', String(latitude));
-      update('longitude', String(longitude));
+      await setLocationAndAddress(latitude, longitude);
       setRegion({ latitude, longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 });
     } catch (e) {
       Alert.alert('Error', e?.message || 'Failed to get location');
@@ -78,6 +129,9 @@ export default function AddMosqueScreen({ navigation }) {
   };
 
   const submit = async () => {
+    if (!form.arabic_name?.trim()) {
+      return Alert.alert('Missing fields', 'Arabic name is required.');
+    }
     if (!form.governorate || !form.city || !form.latitude || !form.longitude) {
       return Alert.alert('Missing fields', 'Governorate, city, latitude, and longitude are required.');
     }
@@ -93,7 +147,7 @@ export default function AddMosqueScreen({ navigation }) {
     let iqama_times = undefined;
     let iqama_offsets = undefined;
     try {
-      const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=2`);
+      const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=18`);
       const json = await res.json();
       const t = json?.data?.timings || {};
       const offsets = {
@@ -125,24 +179,23 @@ export default function AddMosqueScreen({ navigation }) {
     }
 
     const payload = {
-      arabic_name: form.arabic_name || undefined,
-      type: form.type || undefined,
+      arabic_name: form.arabic_name,
+      type: (form.type && form.type.trim()) ? form.type.trim() : 'mosque',
       governorate: form.governorate,
       delegation: form.delegation || undefined,
       city: form.city,
-      neighborhood: form.neighborhood || undefined,
       address: form.address || undefined,
       latitude: lat,
       longitude: lng,
-      women_section: !!form.women_section,
-      wudu: !!form.wudu,
-      parking: !!form.parking,
-      accessibility: !!form.accessibility,
-      ac: !!form.ac,
+      facilities: {
+        women_section: !!form.women_section,
+        wudu: !!form.wudu,
+        parking: !!form.parking,
+        accessibility: !!form.accessibility,
+        ac: !!form.ac,
+      },
       jumuah_time: form.jumuah_time || undefined,
       eid_info: form.eid_info || undefined,
-      iqama_times,
-      iqama_offsets,
     };
 
     try {
@@ -159,40 +212,52 @@ export default function AddMosqueScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>اقتراح مسجد</Text>
-      <View style={styles.row}><Text style={styles.label}>الاسم بالعربية*</Text><TextInput style={styles.input} value={form.arabic_name} onChangeText={(t)=>update('arabic_name', t)} /></View>
-      <View style={styles.row}><Text style={styles.label}>النوع (مسجد/جامع/مصلى)</Text><TextInput style={styles.input} value={form.type} onChangeText={(t)=>update('type', t)} /></View>
+      <Text style={styles.title}>Add Mosque / اقتراح مسجد</Text>
+      
+      {/* 1. Basic Info */}
       <View style={styles.row}>
-        <Text style={styles.label}>الولاية*</Text>
+        <Text style={styles.label}>Arabic Name / الاسم بالعربية*</Text>
+        <TextInput style={styles.input} value={form.arabic_name} onChangeText={(t)=>update('arabic_name', t)} />
+      </View>
+      
+      <View style={styles.row}>
+        <Text style={styles.label}>Type / النوع</Text>
+        <TouchableOpacity style={styles.input} onPress={()=>setTypePickerOpen(true)}>
+          <Text style={{ color: form.type ? theme.colors.text : theme.colors.muted }}>{form.type || 'Select Type / اختر النوع'}</Text>
+        </TouchableOpacity>
+      </View>
+      {/* 2. Location Selectors */}
+      <View style={styles.row}>
+        <Text style={styles.label}>Governorate / الولاية*</Text>
         <TouchableOpacity style={styles.input} onPress={()=>setGovPickerOpen(true)}>
-          <Text style={{ color: form.governorate ? theme.colors.text : theme.colors.muted }}>{form.governorate || 'اختر الولاية'}</Text>
+          <Text style={{ color: form.governorate ? theme.colors.text : theme.colors.muted }}>{form.governorate || 'Select / اختر'}</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.row}><TextInput style={styles.input} placeholder="المعتمدية / البلدية" value={form.delegation} onChangeText={(t)=>update('delegation', t)} /></View>
+
       <View style={styles.row}>
-        <Text style={styles.label}>المدينة*</Text>
+        <Text style={styles.label}>Delegation / المعتمدية</Text>
+        <TouchableOpacity style={styles.input} disabled={!form.governorate} onPress={()=>setDelPickerOpen(true)}>
+          <Text style={{ color: form.delegation ? theme.colors.text : theme.colors.muted }}>{form.delegation || 'Select / اختر'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>City/Locality / المدينة*</Text>
         <TouchableOpacity style={styles.input} onPress={()=>setCityPickerOpen(true)}>
-          <Text style={{ color: form.city ? theme.colors.text : theme.colors.muted }}>{form.city || 'اختر المدينة'}</Text>
+          <Text style={{ color: form.city ? theme.colors.text : theme.colors.muted }}>{form.city || 'Select / اختر'}</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.row}><TextInput style={styles.input} placeholder="الحي" value={form.neighborhood} onChangeText={(t)=>update('neighborhood', t)} /></View>
-      <View style={styles.row}><TextInput style={styles.input} placeholder="العنوان" value={form.address} onChangeText={(t)=>update('address', t)} /></View>
-      <View style={styles.row2}>
-        <TextInput style={[styles.input, styles.half]} placeholder="خط العرض*" keyboardType="decimal-pad" value={form.latitude} onChangeText={(t)=>update('latitude', t)} />
-        <TextInput style={[styles.input, styles.half]} placeholder="خط الطول*" keyboardType="decimal-pad" value={form.longitude} onChangeText={(t)=>update('longitude', t)} />
-      </View>
+    
       <View style={styles.row}>
-        <TouchableOpacity style={[styles.btn, { backgroundColor: theme.colors.secondary }]} onPress={useCurrentLocation}>
-          <Text style={styles.btnText}>استخدام موقعي الحالي</Text>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: theme.colors.secondary, marginTop: 0 }]} onPress={useCurrentLocation}>
+          <Text style={styles.btnText}>Use Current Location / استخدام موقعي الحالي</Text>
         </TouchableOpacity>
       </View>
 
       <View style={{ height: 260, borderRadius: theme.radius.md, overflow: 'hidden', marginBottom: theme.spacing.md }}>
-        <MapView style={{ flex: 1 }} initialRegion={region} onPress={(e)=>{
+        <MapView style={{ flex: 1 }} region={region} onPress={(e)=>{
           const { latitude, longitude } = e.nativeEvent.coordinate;
-          update('latitude', String(latitude));
-          update('longitude', String(longitude));
-          setRegion({ ...region, latitude, longitude });
+          setLocationAndAddress(latitude, longitude);
         }}>
           {(form.latitude && form.longitude) ? (
             <Marker coordinate={{ latitude: parseFloat(form.latitude), longitude: parseFloat(form.longitude) }} />
@@ -200,30 +265,91 @@ export default function AddMosqueScreen({ navigation }) {
         </MapView>
       </View>
 
-      <Text style={styles.sectionTitle}>Facilities</Text>
-      <View style={styles.switchRow}><Text>Women Section</Text><Switch value={form.women_section} onValueChange={(v)=>update('women_section', v)} /></View>
-      <View style={styles.switchRow}><Text>Wudu</Text><Switch value={form.wudu} onValueChange={(v)=>update('wudu', v)} /></View>
-      <View style={styles.switchRow}><Text>Parking</Text><Switch value={form.parking} onValueChange={(v)=>update('parking', v)} /></View>
-      <View style={styles.switchRow}><Text>Accessibility</Text><Switch value={form.accessibility} onValueChange={(v)=>update('accessibility', v)} /></View>
-      <View style={styles.switchRow}><Text>Air Conditioning</Text><Switch value={form.ac} onValueChange={(v)=>update('ac', v)} /></View>
+      <View style={styles.row2}>
+        <View style={styles.half}>
+          <Text style={styles.label}>Lat / خط العرض</Text>
+          <TextInput style={styles.input} keyboardType="decimal-pad" value={form.latitude} onChangeText={(t)=>update('latitude', t)} />
+        </View>
+        <View style={styles.half}>
+          <Text style={styles.label}>Lng / خط الطول</Text>
+          <TextInput style={styles.input} keyboardType="decimal-pad" value={form.longitude} onChangeText={(t)=>update('longitude', t)} />
+        </View>
+      </View>
 
-      <Text style={styles.sectionTitle}>Prayer Info</Text>
-      <View style={styles.row}><TextInput style={styles.input} placeholder="وقت الجمعة (13:00)" value={form.jumuah_time} onChangeText={(t)=>update('jumuah_time', t)} /></View>
-      <View style={styles.row}><TextInput style={styles.input} placeholder="معلومات العيد" value={form.eid_info} onChangeText={(t)=>update('eid_info', t)} /></View>
-      <Text style={styles.sectionTitle}>مدة الانتظار لإقامة الصلاة (بالدقائق)</Text>
+      <View style={styles.row}>
+        <Text style={styles.label}>Address / العنوان (Auto/Manual)</Text>
+        <TextInput style={styles.input} placeholder="Address / العنوان" value={form.address} onChangeText={(t)=>update('address', t)} />
+      </View>
+
+      <Text style={styles.sectionTitle}>Facilities / المرافق</Text>
+      <View style={styles.switchRow}><Text>Women Section / مصلى نساء</Text><Switch value={form.women_section} onValueChange={(v)=>update('women_section', v)} /></View>
+      <View style={styles.switchRow}><Text>Wudu / مكان وضوء</Text><Switch value={form.wudu} onValueChange={(v)=>update('wudu', v)} /></View>
+      <View style={styles.switchRow}><Text>Parking / موقف سيارات</Text><Switch value={form.parking} onValueChange={(v)=>update('parking', v)} /></View>
+      <View style={styles.switchRow}><Text>Accessibility / ولوج لذوي الاحتياجات</Text><Switch value={form.accessibility} onValueChange={(v)=>update('accessibility', v)} /></View>
+      <View style={styles.switchRow}><Text>Air Conditioning / مكيف هواء</Text><Switch value={form.ac} onValueChange={(v)=>update('ac', v)} /></View>
+
+      {/* 5. Prayer Info */}
+      <Text style={styles.sectionTitle}>Prayer Times / أوقات الصلاة</Text>
+      
+      <View style={styles.row}>
+        <Text style={styles.label}>Jumuah / الجمعة</Text>
+        <TextInput style={styles.input} placeholder="13:00" value={form.jumuah_time} onChangeText={(t)=>update('jumuah_time', t)} />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Eid Info / معلومات العيد</Text>
+        <TextInput style={styles.input} placeholder="Eid info / معلومات العيد" value={form.eid_info} onChangeText={(t)=>update('eid_info', t)} />
+      </View>
+
+      <Text style={styles.sectionTitle}>Iqama Wait Times (minutes) / الانتظار (دقائق)</Text>
       <View style={styles.row2}>
-        <TextInput style={[styles.input, styles.half]} placeholder="فجر (دقائق)" keyboardType="number-pad" value={form.iqama_fajr} onChangeText={(t)=>update('iqama_fajr', t)} />
-        <TextInput style={[styles.input, styles.half]} placeholder="ظهر (دقائق)" keyboardType="number-pad" value={form.iqama_dhuhr} onChangeText={(t)=>update('iqama_dhuhr', t)} />
+        <View style={styles.half}>
+          <Text style={styles.label}>Fajr / فجر</Text>
+          <TextInput style={styles.input} keyboardType="number-pad" value={form.iqama_fajr} onChangeText={(t)=>update('iqama_fajr', t)} />
+        </View>
+        <View style={styles.half}>
+          <Text style={styles.label}>Dhuhr / ظهر</Text>
+          <TextInput style={styles.input} keyboardType="number-pad" value={form.iqama_dhuhr} onChangeText={(t)=>update('iqama_dhuhr', t)} />
+        </View>
       </View>
       <View style={styles.row2}>
-        <TextInput style={[styles.input, styles.half]} placeholder="عصر (دقائق)" keyboardType="number-pad" value={form.iqama_asr} onChangeText={(t)=>update('iqama_asr', t)} />
-        <TextInput style={[styles.input, styles.half]} placeholder="مغرب (دقائق)" keyboardType="number-pad" value={form.iqama_maghrib} onChangeText={(t)=>update('iqama_maghrib', t)} />
+        <View style={styles.half}>
+          <Text style={styles.label}>Asr / عصر</Text>
+          <TextInput style={styles.input} keyboardType="number-pad" value={form.iqama_asr} onChangeText={(t)=>update('iqama_asr', t)} />
+        </View>
+        <View style={styles.half}>
+          <Text style={styles.label}>Maghrib / مغرب</Text>
+          <TextInput style={styles.input} keyboardType="number-pad" value={form.iqama_maghrib} onChangeText={(t)=>update('iqama_maghrib', t)} />
+        </View>
       </View>
-      <View style={styles.row}><TextInput style={styles.input} placeholder="عشاء (دقائق)" keyboardType="number-pad" value={form.iqama_isha} onChangeText={(t)=>update('iqama_isha', t)} /></View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Isha / عشاء</Text>
+        <TextInput style={styles.input} keyboardType="number-pad" value={form.iqama_isha} onChangeText={(t)=>update('iqama_isha', t)} />
+      </View>
 
       <TouchableOpacity disabled={submitting} style={[styles.btn, submitting && { opacity: 0.7 }]} onPress={submit}>
-        <Text style={styles.btnText}>{submitting ? 'Submitting…' : 'Submit Suggestion'}</Text>
+        <Text style={styles.btnText}>{submitting ? 'Submitting… / جاري الإرسال…' : 'Submit Suggestion / إرسال الاقتراح'}</Text>
       </TouchableOpacity>
+
+      <Modal visible={typePickerOpen} transparent animationType="fade" onRequestClose={()=>setTypePickerOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <FlatList
+              data={[
+                { label: 'Mosque / مسجد', value: 'mosque' },
+                { label: 'Jamii / جامع', value: 'jamii' },
+                { label: 'Musalla / مصلى', value: 'musalla' },
+              ]}
+              keyExtractor={(item, idx)=>String(idx)}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.optionRow} onPress={()=>{ update('type', item.value); setTypePickerOpen(false); }}>
+                  <Text style={styles.optionText}>{item.label}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={styles.modalClose} onPress={()=>setTypePickerOpen(false)}><Text style={styles.modalCloseText}>Close / إغلاق</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={govPickerOpen} transparent animationType="fade" onRequestClose={()=>setGovPickerOpen(false)}>
         <View style={styles.modalOverlay}>
@@ -245,16 +371,47 @@ export default function AddMosqueScreen({ navigation }) {
       <Modal visible={cityPickerOpen} transparent animationType="fade" onRequestClose={()=>setCityPickerOpen(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <FlatList
-              data={cities}
-              keyExtractor={(item, idx)=>String(idx)}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.optionRow} onPress={()=>{ update('city', item); setCityPickerOpen(false); }}>
-                  <Text style={styles.optionText}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
+            {loadingCity ? (
+              <ActivityIndicator style={{ marginTop: theme.spacing.md }} />
+            ) : (
+              <>
+                <TextInput style={styles.input} placeholder="بحث" value={searchCity} onChangeText={setSearchCity} />
+                <FlatList
+                  data={cities.filter(c => c.toLowerCase().includes(searchCity.toLowerCase()))}
+                  keyExtractor={(item, idx)=>String(idx)}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.optionRow} onPress={()=>{ update('city', item); setCityPickerOpen(false); }}>
+                      <Text style={styles.optionText}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </>
+            )}
             <TouchableOpacity style={styles.modalClose} onPress={()=>setCityPickerOpen(false)}><Text style={styles.modalCloseText}>إغلاق</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={delPickerOpen} transparent animationType="fade" onRequestClose={()=>setDelPickerOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            {loadingDel ? (
+              <ActivityIndicator style={{ marginTop: theme.spacing.md }} />
+            ) : (
+              <>
+                <TextInput style={styles.input} placeholder="بحث" value={searchDel} onChangeText={setSearchDel} />
+                <FlatList
+                  data={delegations.filter(d => d.toLowerCase().includes(searchDel.toLowerCase()))}
+                  keyExtractor={(item, idx)=>String(idx)}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.optionRow} onPress={()=>{ update('delegation', item); setDelPickerOpen(false); }}>
+                      <Text style={styles.optionText}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </>
+            )}
+            <TouchableOpacity style={styles.modalClose} onPress={()=>setDelPickerOpen(false)}><Text style={styles.modalCloseText}>إغلاق</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -265,7 +422,7 @@ export default function AddMosqueScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xl },
-  title: { fontSize: 20, fontFamily: 'Cairo-Bold', color: theme.colors.text, marginBottom: theme.spacing.md },
+  title: { fontSize: 20, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', marginBottom: theme.spacing.md },
   row: { marginBottom: theme.spacing.md },
   row2: { flexDirection: 'row', gap: theme.spacing.md, marginBottom: theme.spacing.md },
   input: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.md, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, color: theme.colors.text },

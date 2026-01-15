@@ -22,7 +22,7 @@ export default function PrayerTimesScreen() {
           const geo = await Location.reverseGeocodeAsync({ latitude, longitude });
           if (geo && geo.length) setCity(geo[0].city || geo[0].region || 'موقعك');
         } catch {}
-        const url = `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`;
+        const url = `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=18`;
         const res = await fetch(url);
         const json = await res.json();
         const t = json?.data?.timings;

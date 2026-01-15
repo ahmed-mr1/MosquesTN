@@ -17,53 +17,16 @@ api.interceptors.request.use(async (config) => {
 
 // Auth
 export async function login(credentials) {
-  try {
-    const { data } = await api.post('/auth/login', credentials);
-    const jwt = data?.access_token;
-    if (jwt) await AsyncStorage.setItem('jwt', jwt);
-    return jwt;
-  } catch (e) {
-    const status = e?.response?.status;
-    // Try demo endpoint next if 404 or general failure
-    let payload = { ...credentials };
-    if (!payload.role && typeof payload.phone === 'string') {
-      const map = {
-        '+21600000001': 'user',
-        '+21600000002': 'moderator',
-        '+21600000003': 'admin',
-      };
-      if (map[payload.phone]) payload = { role: map[payload.phone] };
-    }
-    try {
-      const { data } = await api.post('/auth/demo/login', payload);
-      const jwt = data?.access_token;
-      if (jwt) await AsyncStorage.setItem('jwt', jwt);
-      return jwt;
-    } catch (inner) {
-      // Final fallback: local demo token
-      const role = payload.role || 'user';
-      const jwt = createDemoToken(role);
-      await AsyncStorage.setItem('jwt', jwt);
-      return jwt;
-    }
-  }
+  // Backend provides /auth/firebase/verify accepting id_token
+  const role = credentials?.role || 'authenticated';
+  const payload = { id_token: role };
+  const { data } = await api.post('/auth/firebase/verify', payload);
+  const jwt = data?.access_token;
+  if (jwt) await AsyncStorage.setItem('jwt', jwt);
+  return jwt;
 }
 
-function base64url(input) {
-  return Buffer.from(JSON.stringify(input)).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-function createDemoToken(role) {
-  // Minimal unsigned JWT-looking token for demo purposes only
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'none', typ: 'JWT' };
-  const payload = { sub: 'demo-user', role, iat: now, exp: now + 24 * 3600 };
-  let encodedHeader = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0'; // precomputed for alg: none
-  try { encodedHeader = base64url(header); } catch {}
-  let encodedPayload = 'eyJzdWIiOiJkZW1vLXVzZXIiLCJyb2xlIjoi' + role + 'In0';
-  try { encodedPayload = base64url(payload); } catch {}
-  return `${encodedHeader}.${encodedPayload}.`;
-}
+// Removed local demo token fallback to ensure real JWT from backend
 
 // Mosques
 export async function getNearbyMosques({ lat, lng, radius = 5 }) {
@@ -97,7 +60,15 @@ export async function suggestMosque(body) {
     const { data } = await api.post('/suggestions/mosques', body);
     return data;
   } catch (e) {
-    const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Request failed';
+    const details = e?.response?.data;
+    let msg = details?.message || details?.error || e?.message || 'Request failed';
+    if (details && typeof details === 'object') {
+      const errs = details.errors || details.field_errors || details.validation_errors;
+      if (errs && typeof errs === 'object') {
+        const parts = Object.entries(errs).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`);
+        if (parts.length) msg = `${msg} — ${parts.join(' | ')}`;
+      }
+    }
     throw new Error(msg);
   }
 }

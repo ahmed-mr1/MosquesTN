@@ -2,16 +2,15 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+// navigation is handled by conditional rendering in AppNavigator
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
   const { loading, login } = useAuth();
 
   const doLogin = async (payload) => {
     try {
-      const jwt = await login(payload);
-      if (jwt) navigation.navigate('MapTab');
+      await login(payload);
+      // AppNavigator will render Tabs automatically when jwt is set
     } catch (e) {
       alert('Login failed: ' + (e?.message || e));
     }

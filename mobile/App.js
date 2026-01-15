@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image } from 'react-native';
 import { theme } from './src/theme';
 import { ThemedView } from './src/components/ThemedView';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -30,8 +30,20 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1 }}>
-        <FullScreenLoader message="جاري تحميل الواجهات…" />
+      <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Image 
+            source={require('./assets/icon.png')} 
+            style={{ width: 120, height: 120, marginBottom: 20 }} 
+            resizeMode="contain" 
+          />
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: theme.colors.primary }}>
+            Tunisian Mosques
+          </Text>
+        </View>
+        <Text style={{ fontSize: 14, color: '#888', marginBottom: 50 }}>
+          Developed by Ahmed Mrabet
+        </Text>
       </View>
     );
   }

@@ -1,0 +1,273 @@
+{
+  "governorate": "Tunis",
+  "delegations": [
+    {
+      "name": "Bab El Bhar",
+      "cities": [
+        "Bab El Bhar",
+        "Habib Thameur",
+        "Hedi Chaker",
+        "Lac De Tunis",
+        "Les Jardins",
+        "Mongi Slim",
+        "Sidi El Bahri",
+        "Taieb El M'Hiri"
+      ]
+    },
+    {
+      "name": "Bab Souika",
+      "cities": [
+        "Bab El Assel",
+        "Bab El Khadra",
+        "Bab Saadoun",
+        "Bab Sidi Abdessalem",
+        "Bab Souika",
+        "Borj Zouara",
+        "El Halfaouine",
+        "Hammam El Rmimi",
+        "Sidi Djebali",
+        "Tronja",
+        "Zaouiet El Bekria"
+      ]
+    },
+    {
+      "name": "Carthage",
+      "cities": [
+        "Amilcar",
+        "Carthage Byrsa",
+        "Carthage Plage",
+        "Cite Mohamed Ali",
+        "Le Jasmin",
+        "Sidi Bou Said"
+      ]
+    },
+    {
+      "name": "Cité El Khadhra",
+      "cities": [
+        "Ali Belhouane",
+        "Cite El Khadra",
+        "Cite Jardin",
+        "Ech-Charguia",
+        "El Bouhaira",
+        "Farhat Hached",
+        "Hay Es Salem",
+        "Khereiddine Pacha"
+      ]
+    },
+    {
+      "name": "Djebel Djelloud",
+      "cities": [
+        "Ali Bach-Hamba",
+        "Cite El Fath",
+        "Djebel Djeloud",
+        "El Afrane",
+        "El Garjouma",
+        "Es-Sebkha",
+        "Sidi Fathallah"
+      ]
+    },
+    {
+      "name": "El Hrairia",
+      "cities": [
+        "El Akba",
+        "El Akba Superieur",
+        "El Antit",
+        "El Foula",
+        "El-Hrairia",
+        "Ezzahrouni",
+        "Ezzouhour V",
+        "Ghedir El Golla",
+        "Tarak Ibn Ziad"
+      ]
+    },
+    {
+      "name": "El Kabaria",
+      "cities": [
+        "Cite Ennour",
+        "El Kabaria (1)",
+        "El Kabaria (2)",
+        "El Kabaria (3)",
+        "El Kabaria (4)",
+        "El Mourouj (2)",
+        "Ibn Sina 1",
+        "Ibn Sina 2"
+      ]
+    },
+    {
+      "name": "El Menzah",
+      "cities": [
+        "01 Juin",
+        "El Fath",
+        "El Manar",
+        "El Manar (1)",
+        "El Menzah"
+      ]
+    },
+    {
+      "name": "El Omrane",
+      "cities": [
+        "Bir Atig",
+        "Cite Des Oliviers",
+        "Djebel El Ahmar",
+        "El Omrane",
+        "Oued El Sebai",
+        "Ras Tabia"
+      ]
+    },
+    {
+      "name": "El Omrane Supérieur",
+      "cities": [
+        "Ahmed Tlili",
+        "Cite El Intilaka",
+        "Cite Ibn Khaldoun I",
+        "Cite Ibn Khaldoun Ii",
+        "Cite Ibn Khaldoun Vi",
+        "El Nassim",
+        "El Omrane Superieur",
+        "El Romana",
+        "Es-Sadique"
+      ]
+    },
+    {
+      "name": "El Ouardia",
+      "cities": [
+        "Bou-Gatfa",
+        "Cite El Izdihar",
+        "Cite Mohamed Ali",
+        "El Ouardia",
+        "Sidi Belhassen",
+        "Tahar Sfar"
+      ]
+    },
+    {
+      "name": "Ettahrir",
+      "cities": [
+        "El Hadika",
+        "Ettahrir (1)",
+        "Ettahrir (2)",
+        "Ettahrir (3)",
+        "Ettahrir Superieur"
+      ]
+    },
+    {
+      "name": "Ezzouhour",
+      "cities": [
+        "Bach-Hamba",
+        "Cite Tayarane",
+        "Es-Saada",
+        "Es-Soumrane",
+        "Ezzouhour",
+        "Ezzouhour Iv"
+      ]
+    },
+    {
+      "name": "La Goulette",
+      "cities": [
+        "Cite Essalama",
+        "Kheireddine",
+        "La Goulette",
+        "La Goulette Casino",
+        "Taieb Mhiri"
+      ]
+    },
+    {
+      "name": "La Marsa",
+      "cities": [
+        "El Bahr El Azrak",
+        "Er-Rmila",
+        "Gammarth",
+        "Gammarth Superieur",
+        "La Marsa El Montazeh",
+        "La Marsa Erriadh",
+        "La Marsa Hadayek",
+        "La Marsa Medina",
+        "La Marsa Plage",
+        "Sidi Daoued"
+      ]
+    },
+    {
+      "name": "La Medina",
+      "cities": [
+        "Bab Benat",
+        "Bab Mnara",
+        "El Assouak",
+        "El Hafsia",
+        "El Sabaghine",
+        "El Taoufik",
+        "El Zraria",
+        "La Medina",
+        "Sidi Ali Azouz",
+        "Sidi Boumendil",
+        "Souk El Nhes",
+        "Tourbet El Bey"
+      ]
+    },
+    {
+      "name": "Le Bardo",
+      "cities": [
+        "Bonne Residence",
+        "Bou-Choucha",
+        "El Bassatine",
+        "El Fath",
+        "El Hadika",
+        "Es-Saada",
+        "Ibn Sina",
+        "Khaznadar",
+        "Ksar-El Bortal",
+        "Ksar-Said",
+        "Ksar-Said Ii",
+        "Le Bardo",
+        "Le Bardo Nord",
+        "Le Bardo Sud"
+      ]
+    },
+    {
+      "name": "Le Kram",
+      "cities": [
+        "Bir El Helou",
+        "El Bouhaira",
+        "Erriadh",
+        "Le Kram Est",
+        "Le Kram Ouest",
+        "Sidi Amor",
+        "Sidi Fredj"
+      ]
+    },
+    {
+      "name": "Sidi El Béchir",
+      "cities": [
+        "Abulkacem Ech-Chebbi",
+        "Farhat Hached",
+        "Maakel Ezzaim",
+        "Saida Manoubia",
+        "Sidi El Bechir",
+        "Sidi Mansour"
+      ]
+    },
+    {
+      "name": "Sidi Hassine",
+      "cities": [
+        "14 Janvier",
+        "20 Mars",
+        "25 Juillet",
+        "Attar",
+        "Borj-Chakir",
+        "Byrine",
+        "El Jaiara",
+        "Meghiret Inzel",
+        "Sidi Hassine"
+      ]
+    },
+    {
+      "name": "Sijoumi",
+      "cities": [
+        "Ali Belhouane",
+        "Bir Anniba",
+        "Cite Des Martyrs",
+        "Cite Helel",
+        "En-Najah",
+        "Mellassine"
+      ]
+    }
+  ]
+}
