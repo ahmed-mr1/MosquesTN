@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { getMosques } from '../services/api';
+import { getMosques, getPendingSuggestions } from '../services/api';
 
 const MosquesContext = createContext(null);
 
@@ -13,20 +13,37 @@ export function MosquesProvider({ children }) {
     setLoading(true);
     setError('');
     try {
-      const PAGE_LIMIT = 100; // server caps at 100
+      // 1. Fetch Approved Mosques (paginated)
+      const PAGE_LIMIT = 100;
       let offset = 0;
-      const all = [];
+      const approvedList = [];
       while (true) {
         const chunk = await getMosques({ limit: PAGE_LIMIT, offset, ...filters });
         if (Array.isArray(chunk) && chunk.length) {
-          all.push(...chunk);
-          // stream updates so Map/List show gradually
-          setMosques([...all]);
+          approvedList.push(...chunk);
         }
         if (!Array.isArray(chunk) || chunk.length < PAGE_LIMIT) break;
         offset += PAGE_LIMIT;
         if (offset > 5000) break; // safety guard
       }
+
+      // 2. Fetch Pending/Suggested Mosques (if not specifically filtered out)
+      let pendingList = [];
+      // If filters contain 'approved: true', we skip suggestions.
+      // But typically filters is empty or contains geo params.
+      // We'll fetch basic pending suggestions.
+      try {
+        const p = await getPendingSuggestions();
+        if (Array.isArray(p)) {
+          pendingList = p.map(x => ({ ...x, approved: false, isSuggestion: true }));
+        }
+      } catch (err) {
+        console.log('Failed to fetch pending suggestions', err);
+      }
+
+      // 3. Merge
+      setMosques([...approvedList, ...pendingList]);
+      
       setLastUpdated(new Date());
     } catch (e) {
       setError(e?.message || String(e));

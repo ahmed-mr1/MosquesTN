@@ -80,9 +80,11 @@ export default function MapScreen({ navigation }) {
     }
 
     return filtered.map((m) => ({
-      key: String(m.id),
+      key: m.isSuggestion ? `s_${m.id}` : `m_${m.id}`,
       id: m.id,
+      isSuggestion: !!m.isSuggestion,
       title: m.arabic_name || m.type || 'Mosque',
+      isPending: !m.approved,
       coordinate: { latitude: m.latitude, longitude: m.longitude },
     }));
   }, [mosques, gov, del, city]);
@@ -99,10 +101,15 @@ export default function MapScreen({ navigation }) {
           showsUserLocation
         >
           {markers.map((mk) => (
-            <Marker key={mk.key} coordinate={mk.coordinate} image={mosqueIcon}>
-              <Callout onPress={() => navigation.navigate('MosqueDetail', { id: mk.id })}>
+            <Marker 
+              key={mk.key} 
+              coordinate={mk.coordinate} 
+              image={mosqueIcon}
+              opacity={mk.isPending ? 0.6 : 1.0} // visual cue for pending
+            >
+              <Callout onPress={() => navigation.navigate('MosqueDetail', { id: mk.id, isSuggestion: mk.isSuggestion })}>
                 <View style={styles.callout}>
-                  <Text style={styles.calloutTitle}>{mk.title}</Text>
+                  <Text style={styles.calloutTitle}>{mk.title} {mk.isPending ? '(Pending)' : ''}</Text>
                   <Text style={styles.calloutLink}>Details</Text>
                 </View>
               </Callout>

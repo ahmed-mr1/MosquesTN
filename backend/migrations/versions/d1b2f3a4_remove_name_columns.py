@@ -1,7 +1,6 @@
 """Remove 'name' columns from mosques and mosque_suggestions
 
 Revision ID: d1b2f3a4
-Revises: 707d26a692c4
 Create Date: 2026-01-11 00:00:00
 
 """

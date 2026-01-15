@@ -60,6 +60,11 @@ export async function getMosqueSuggestion(id) {
   return data;
 }
 
+export async function mySuggestions() {
+  const { data } = await api.get('/suggestions/mosques');
+  return data;
+}
+
 export async function postMosqueReview(id, body) {
   const { data } = await api.post(`/mosques/${id}/reviews`, body);
   return data;
@@ -81,6 +86,29 @@ export async function suggestMosque(body) {
     }
     throw new Error(msg);
   }
+}
+
+export async function uploadImage(uri) {
+  const formData = new FormData();
+  const filename = uri.split('/').pop();
+  const match = /\.(\w+)$/.exec(filename);
+  const type = match ? `image/${match[1] === 'jpg' ? 'jpeg' : match[1]}` : `image/jpeg`;
+
+  formData.append('file', { uri, name: filename, type });
+
+  const { data } = await api.post('/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.url;
+}
+
+// Edit Suggestions
+export async function suggestMosqueEdit(mosqueId, patch) {
+  const { data } = await api.post('/edits', {
+    mosque_id: mosqueId,
+    patch: patch
+  });
+  return data;
 }
 
 // Confirmations

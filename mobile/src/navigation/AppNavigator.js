@@ -11,6 +11,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import HomeScreen from '../screens/HomeScreen';
 import AddMosqueScreen from '../screens/AddMosqueScreen';
+import EditMosqueScreen from '../screens/EditMosqueScreen';
 import PrayerTimesScreen from '../screens/PrayerTimesScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import { theme } from '../theme';
@@ -69,6 +70,12 @@ export default function AppNavigator() {
           })} />
           <Stack.Screen name="AddMosque" component={AddMosqueScreen} options={({ navigation }) => ({ 
             title: 'Add Mosque',
+            headerRight: () => (
+              <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
+            )
+          })} />
+          <Stack.Screen name="EditMosque" component={EditMosqueScreen} options={({ navigation }) => ({ 
+            title: 'Suggest Edit',
             headerRight: () => (
               <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
             )

@@ -113,9 +113,9 @@ export default function HomeScreen({ navigation }) {
       {/* Hero Card: Next Prayer */}
       <View style={styles.heroCard}>
         <ImageBackground 
-          source={require('../../assets/zitouna2.png')} 
+          source={require('../../assets/mosquetn.jpg')} 
           style={styles.heroBg} 
-          imageStyle={{ opacity: 0.15, resizeMode: 'cover' }}
+          imageStyle={{ opacity: 0.3, resizeMode: 'cover' }}
         >
           <View style={styles.heroContent}>
             <View>
@@ -186,8 +186,8 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           <View style={{flexDirection:'row', alignItems:'center'}}>
-            <Text style={styles.duaTitle}>أدعية المسجد</Text>
             <MaterialCommunityIcons name="hands-pray" size={24} color={theme.colors.primary} style={{ marginLeft: 8 }} />
+            <Text style={styles.duaTitle}>  أدعية المسجد  </Text>
           </View>
         </View>
 
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   menuBtn: { padding: 4 },
 
   heroCard: { backgroundColor: theme.colors.primary, borderRadius: 24, overflow: 'hidden', marginBottom: 24, elevation: 8, shadowColor: theme.colors.primary, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
-  heroBg: { padding: 24 },
+  heroBg: { padding: 22 },
   heroContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   heroLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontFamily: 'Cairo-Medium', marginBottom: 4 },
   heroPrayerName: { color: '#fff', fontSize: 32, fontFamily: 'Cairo-Bold', marginBottom: 8 },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   dailyText: { fontSize: 15, color: theme.colors.text, lineHeight: 24, fontStyle: 'italic', marginBottom: 8 },
   dailySource: { fontSize: 12, color: theme.colors.muted, textAlign: 'right', fontWeight: 'bold' },
 
-  duaCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  duaCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 0, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   duaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   duaTitle: { fontSize: 18, fontFamily: 'Cairo-Bold', color: theme.colors.text },
   duaToggle: { flexDirection: 'row', backgroundColor: '#f0f0f0', borderRadius: 20, padding: 2 },
@@ -273,11 +273,11 @@ const styles = StyleSheet.create({
   duaTabTextActive: { color: '#fff' },
   duaContent: { padding: 8 },
   duaLabel: { fontSize: 13, color: theme.colors.secondary, fontFamily: 'Cairo-Bold', marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' },
-  duaArabic: { fontSize: 20, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', marginBottom: 16, lineHeight: 40 },
+  duaArabic: { fontSize: 18, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', marginBottom: 16, lineHeight: 40 },
   duaTranslation: { fontSize: 14, color: theme.colors.muted, textAlign: 'center', fontStyle: 'italic', fontFamily: 'Cairo-Medium' },
 
   verseCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, marginBottom: 24, alignItems: 'center', borderTopWidth: 4, borderTopColor: theme.colors.accent, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  verseText: { fontSize: 22, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', lineHeight: 40, marginBottom: 12 },
+  verseText: { fontSize: 18, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', lineHeight: 40, marginBottom: 12 },
   verseSource: { fontSize: 14, color: theme.colors.accent, fontFamily: 'Cairo-Bold' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

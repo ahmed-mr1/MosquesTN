@@ -122,18 +122,27 @@ def approve_edit(edit_id: int):
     patch = s.patch_json or {}
     if "address" in patch:
         m.address = patch.get("address")
-    if "neighborhood" in patch:
-        m.neighborhood = patch.get("neighborhood")
+    # Removed neighborhood
     if "facilities" in patch:
         m.facilities_json = patch.get("facilities") or {}
-    if "facilities_details" in patch:
-        m.facilities_details = patch.get("facilities_details")
+    # Removed facilities_details
     if "iqama_times" in patch:
         m.iqama_times_json = {**(m.iqama_times_json or {}), **(patch.get("iqama_times") or {})}
     if "jumuah_time" in patch:
         m.jumuah_time = patch.get("jumuah_time")
     if "eid_info" in patch:
         m.eid_info = patch.get("eid_info")
+    if "image_url" in patch:
+        m.image_url = patch.get("image_url")
+    
+    # Staff
+    if "muazzin_name" in patch:
+        m.muazzin_name = patch.get("muazzin_name")
+    if "imam_5_prayers_name" in patch:
+        m.imam_5_prayers_name = patch.get("imam_5_prayers_name")
+    if "imam_jumua_name" in patch:
+        m.imam_jumua_name = patch.get("imam_jumua_name")
+
     s.status = "approved"
     db.session.commit()
     return s

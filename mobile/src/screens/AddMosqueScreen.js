@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Switch, TouchableOpacity, Alert, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Switch, TouchableOpacity, Alert, Modal, FlatList, ActivityIndicator, Image } from 'react-native';
 import { theme } from '../theme';
-import { suggestMosque } from '../services/api';
+import { suggestMosque, uploadImage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useMosques } from '../context/MosquesContext';
 import { governorates as GOVS, fetchDelegations, fetchCities } from '../services/locations';
 import MapView, { Marker } from 'react-native-maps';
+import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 
 export default function AddMosqueScreen({ navigation }) {
@@ -25,6 +26,9 @@ export default function AddMosqueScreen({ navigation }) {
     parking: false,
     accessibility: false,
     ac: false,
+    muazzin_name: '',
+    imam_5_prayers_name: '',
+    imam_jumua_name: '',
     jumuah_time: '',
     eid_info: '',
     iqama_fajr: '',
@@ -46,6 +50,7 @@ export default function AddMosqueScreen({ navigation }) {
   const [searchDel, setSearchDel] = useState('');
   const [searchCity, setSearchCity] = useState('');
   const [region, setRegion] = useState({ latitude: 34.0, longitude: 9.6, latitudeDelta: 6.0, longitudeDelta: 6.0 });
+  const [imageUri, setImageUri] = useState(null);
 
   useEffect(() => {
     if (!jwt) {
@@ -128,6 +133,30 @@ export default function AddMosqueScreen({ navigation }) {
     }
   };
 
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Sorry, we need camera roll permissions to make this work!');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Failed to pick image: ' + (e.message || e));
+    }
+  };
+
   const submit = async () => {
     if (!form.arabic_name?.trim()) {
       return Alert.alert('Missing fields', 'Arabic name is required.');
@@ -178,28 +207,38 @@ export default function AddMosqueScreen({ navigation }) {
       iqama_times = undefined;
     }
 
-    const payload = {
-      arabic_name: form.arabic_name,
-      type: (form.type && form.type.trim()) ? form.type.trim() : 'mosque',
-      governorate: form.governorate,
-      delegation: form.delegation || undefined,
-      city: form.city,
-      address: form.address || undefined,
-      latitude: lat,
-      longitude: lng,
-      facilities: {
-        women_section: !!form.women_section,
-        wudu: !!form.wudu,
-        parking: !!form.parking,
-        accessibility: !!form.accessibility,
-        ac: !!form.ac,
-      },
-      jumuah_time: form.jumuah_time || undefined,
-      eid_info: form.eid_info || undefined,
-    };
-
     try {
       setSubmitting(true);
+      
+      let imageUrl = undefined;
+      if (imageUri) {
+        imageUrl = await uploadImage(imageUri);
+      }
+
+      const payload = {
+        arabic_name: form.arabic_name,
+        type: (form.type && form.type.trim()) ? form.type.trim() : 'mosque',
+        governorate: form.governorate,
+        delegation: form.delegation || undefined,
+        city: form.city,
+        address: form.address || undefined,
+        latitude: lat,
+        longitude: lng,
+        image_url: imageUrl,
+        facilities: {
+          women_section: !!form.women_section,
+          wudu: !!form.wudu,
+          parking: !!form.parking,
+          accessibility: !!form.accessibility,
+          ac: !!form.ac,
+        },
+        muazzin_name: form.muazzin_name || undefined,
+        imam_5_prayers_name: form.imam_5_prayers_name || undefined,
+        imam_jumua_name: form.imam_jumua_name || undefined,
+        jumuah_time: form.jumuah_time || undefined,
+        eid_info: form.eid_info || undefined,
+      };
+
       await suggestMosque(payload);
       Alert.alert('Submitted', 'Your suggestion was submitted. Pending moderation.');
       navigation.goBack();
@@ -214,6 +253,17 @@ export default function AddMosqueScreen({ navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Add Mosque / اقتراح مسجد</Text>
       
+      {/* Image Picker */}
+      <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Text style={styles.imagePlaceholderText}>+ Add Photo / إضافة صورة</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
       {/* 1. Basic Info */}
       <View style={styles.row}>
         <Text style={styles.label}>Arabic Name / الاسم بالعربية*</Text>
@@ -287,6 +337,21 @@ export default function AddMosqueScreen({ navigation }) {
       <View style={styles.switchRow}><Text>Parking / موقف سيارات</Text><Switch value={form.parking} onValueChange={(v)=>update('parking', v)} /></View>
       <View style={styles.switchRow}><Text>Accessibility / ولوج لذوي الاحتياجات</Text><Switch value={form.accessibility} onValueChange={(v)=>update('accessibility', v)} /></View>
       <View style={styles.switchRow}><Text>Air Conditioning / مكيف هواء</Text><Switch value={form.ac} onValueChange={(v)=>update('ac', v)} /></View>
+
+      {/* Staff Info */}
+      <Text style={styles.sectionTitle}>Staff / القائمون على المسجد</Text>
+      <View style={styles.row}>
+        <Text style={styles.label}>Muazzin / المؤذن</Text>
+        <TextInput style={styles.input} placeholder="Muazzin Name" value={form.muazzin_name} onChangeText={(t)=>update('muazzin_name', t)} />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Imam (5 Prayers) / إمام الصلوات</Text>
+        <TextInput style={styles.input} placeholder="Imam Name" value={form.imam_5_prayers_name} onChangeText={(t)=>update('imam_5_prayers_name', t)} />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Imam Jumuah / إمام الجمعة</Text>
+        <TextInput style={styles.input} placeholder="Jumuah Imam Name" value={form.imam_jumua_name} onChangeText={(t)=>update('imam_jumua_name', t)} />
+      </View>
 
       {/* 5. Prayer Info */}
       <Text style={styles.sectionTitle}>Prayer Times / أوقات الصلاة</Text>
@@ -438,4 +503,7 @@ const styles = StyleSheet.create({
   optionText: { color: theme.colors.text, fontSize: 16 },
   modalClose: { marginTop: 8, alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: theme.colors.primary, borderRadius: 8 },
   modalCloseText: { color: '#fff' },
+  imagePicker: { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, height: 150, marginBottom: theme.spacing.md },
+  imagePreview: { width: '100%', height: '100%', borderRadius: theme.radius.md },
+  imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
 });

@@ -32,12 +32,10 @@ class MosqueEditsResource(MethodView):
         patch = {}
         if "address" in patch_in:
             patch["address"] = (patch_in.get("address") or "").strip()
-        if "neighborhood" in patch_in:
-            patch["neighborhood"] = (patch_in.get("neighborhood") or "").strip()
+        # Removed neighborhood
         if "facilities" in patch_in:
             patch["facilities"] = sanitize_facilities(patch_in.get("facilities") or {})
-        if "facilities_details" in patch_in:
-            patch["facilities_details"] = patch_in.get("facilities_details")
+        # Removed facilities_details
         if "iqama_times" in patch_in:
             patch["iqama_times"] = sanitize_times(patch_in.get("iqama_times") or {})
         if "jumuah_time" in patch_in:
@@ -46,12 +44,21 @@ class MosqueEditsResource(MethodView):
                 patch["jumuah_time"] = jt
         if "eid_info" in patch_in:
             patch["eid_info"] = patch_in.get("eid_info")
+        if "image_url" in patch_in:
+            patch["image_url"] = patch_in.get("image_url")
+        
+        # Staff
+        if "muazzin_name" in patch_in:
+            patch["muazzin_name"] = patch_in.get("muazzin_name")
+        if "imam_5_prayers_name" in patch_in:
+            patch["imam_5_prayers_name"] = patch_in.get("imam_5_prayers_name")
+        if "imam_jumua_name" in patch_in:
+            patch["imam_jumua_name"] = patch_in.get("imam_jumua_name")
+
         if not patch:
             abort(400, message="Empty patch")
         mod_input = " ".join([
             patch.get("address") or "",
-            patch.get("neighborhood") or "",
-            patch.get("facilities_details") or "",
             patch.get("jumuah_time") or "",
             str(patch.get("eid_info") or ""),
             " ".join(sorted(patch.keys())),

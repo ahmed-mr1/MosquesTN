@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { getMosque, getMosqueReviews, postMosqueReview, confirmMosque, getMosqueSuggestion, confirmSuggestion } from '../services/api';
@@ -74,14 +74,32 @@ export default function MosqueDetailScreen({ route, navigation }) {
       <Text style={styles.title}>{mosque.arabic_name || mosque.type || 'Mosque'}</Text>
       {!!mosque.address && <Text style={styles.subtitle}>{mosque.address}</Text>}
 
+      {!!mosque.image_url && (
+        <Image
+          source={{ uri: mosque.image_url }}
+          style={styles.mosqueImage}
+          resizeMode="cover"
+        />
+      )}
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Details</Text>
         <Text>Latitude: {mosque.latitude}</Text>
         <Text>Longitude: {mosque.longitude}</Text>
         {!!mosque.city && <Text>City: {mosque.city}</Text>}
         {!!mosque.governorate && <Text>Governorate: {mosque.governorate}</Text>}
-        {!!mosque.neighborhood && <Text>Neighborhood: {mosque.neighborhood}</Text>}
       </View>
+
+      {/* Staff Section */}
+      {(mosque.muazzin_name || mosque.imam_5_prayers_name || mosque.imam_jumua_name || mosque.jumuah_time) && (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Staff & Times / القائمون والمسجد</Text>
+        {!!mosque.jumuah_time && <Text style={styles.txt}>Jumuah Time: {mosque.jumuah_time}</Text>}
+        {!!mosque.muazzin_name && <Text style={styles.txt}>Muazzin: {mosque.muazzin_name}</Text>}
+        {!!mosque.imam_5_prayers_name && <Text style={styles.txt}>Imam (5 Prayers): {mosque.imam_5_prayers_name}</Text>}
+        {!!mosque.imam_jumua_name && <Text style={styles.txt}>Imam Jumuah: {mosque.imam_jumua_name}</Text>}
+      </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Facilities</Text>
@@ -133,15 +151,23 @@ export default function MosqueDetailScreen({ route, navigation }) {
       </View>
       )}
 
-      {(!isSuggestion && mosque.approved !== false) ? (
+      
+      <View style={{ gap: 10, marginTop: 10 }}>
+       {(!isSuggestion && mosque.approved !== false) ? (
+        <>
         <TouchableOpacity style={[styles.btn, styles.primary]} onPress={() => navigation.navigate('Review', { mosqueId: id, mosqueName: mosque.arabic_name })}>
           <Text style={styles.btnText}>Write a Review / أكتب تقييم</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: theme.colors.accent }]} onPress={() => navigation.navigate('EditMosque', { mosque })}>
+          <Text style={styles.btnText}>Suggest Edit / اقتراح تعديل</Text>
+        </TouchableOpacity>
+        </>
       ) : (
         <TouchableOpacity style={[styles.btn, styles.secondary]} onPress={confirm}>
           <Text style={styles.btnText}>Confirm this mosque exists / تأكيد وجود المسجد</Text>
         </TouchableOpacity>
       )}
+      </View>
     </ScrollView>
   );
 }
@@ -169,4 +195,5 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: theme.colors.primary },
   secondary: { backgroundColor: theme.colors.secondary, marginTop: theme.spacing.md },
   btnText: { color: '#fff', fontFamily: 'Cairo-Medium' },
+  mosqueImage: { width: '100%', height: 200, borderRadius: theme.radius.md, marginTop: theme.spacing.md, marginBottom: theme.spacing.sm, backgroundColor: theme.colors.surface },
 });

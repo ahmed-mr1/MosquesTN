@@ -67,14 +67,17 @@ class MosqueSuggestionsResource(MethodView):
             governorate=governorate,
             delegation=data.get("delegation"),
             city=data.get("city"),
-            neighborhood=data.get("neighborhood"),
             address=data.get("address"),
             latitude=data.get("latitude"),
             longitude=data.get("longitude"),
+            image_url=data.get("image_url"),
             facilities_json=facilities,
-            facilities_details=data.get("facilities_details"),
+            iqama_times_json=data.get("iqama_times") or {},  # Pass iqama if any
             jumuah_time=data.get("jumuah_time"),
             eid_info=data.get("eid_info"),
+            muazzin_name=data.get("muazzin_name"),
+            imam_5_prayers_name=data.get("imam_5_prayers_name"),
+            imam_jumua_name=data.get("imam_jumua_name"),
             created_by_user_id=created_by_user_id,
         )
 
@@ -86,7 +89,6 @@ class MosqueSuggestionsResource(MethodView):
             governorate,
             data.get("city") or "",
             data.get("address") or "",
-            data.get("facilities_details") or "",
         ])
         decision = moderate_text(mod_input)
         s.status = "pending_approval" if decision.get("decision") == "valid" else "rejected"

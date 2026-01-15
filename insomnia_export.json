@@ -1,0 +1,538 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-01-15T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.1.0",
+  "resources": [
+    {
+      "_id": "req_auth_verify",
+      "parentId": "fld_auth",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/auth/firebase/verify",
+      "name": "Verify Firebase Token",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"id_token\": \"your_firebase_id_token_here\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1700000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_me",
+      "parentId": "fld_auth",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/auth/me",
+      "name": "Get Me",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1600000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_mosques_list",
+      "parentId": "fld_mosques",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/mosques",
+      "name": "List Mosques",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "governorate",
+          "value": "Ariana",
+          "disabled": true
+        },
+        {
+          "name": "city",
+          "value": "Ariana Ville",
+          "disabled": true
+        },
+        {
+          "name": "type",
+          "value": "Jami",
+          "disabled": true
+        },
+        {
+          "name": "limit",
+          "value": "20"
+        },
+        {
+          "name": "offset",
+          "value": "0"
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1700000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_mosques_nearby",
+      "parentId": "fld_mosques",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/mosques/nearby",
+      "name": "Nearby Mosques",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "lat",
+          "value": "36.8"
+        },
+        {
+          "name": "lng",
+          "value": "10.1"
+        },
+        {
+          "name": "radius",
+          "value": "5"
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1600000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_mosques_detail",
+      "parentId": "fld_mosques",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/mosques/1",
+      "name": "Get Mosque Detail",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1500000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_reviews_list",
+      "parentId": "fld_reviews",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/mosques/1/reviews",
+      "name": "List Mosque Reviews",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1700000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_reviews_create",
+      "parentId": "fld_reviews",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/mosques/1/reviews",
+      "name": "Submit Review",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"rating\": 5,\n\t\"comment\": \"Great mosque, very clean.\",\n\t\"criteria\": {\n\t\t\"cleanliness\": 5,\n\t\t\"quiet\": 4\n\t}\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1600000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_meta_facilities",
+      "parentId": "fld_meta",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/meta/facilities",
+      "name": "List Facilities Options",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1700000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_suggestions_pending",
+      "parentId": "fld_suggestions",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/suggestions/mosques/pending",
+      "name": "List Pending Suggestions",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1700000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_suggestions_create",
+      "parentId": "fld_suggestions",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/suggestions/mosques",
+      "name": "Suggest New Mosque",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"arabic_name\": \"جامع الرحمة\",\n\t\"type\": \"Jami\",\n\t\"governorate\": \"Ariana\",\n\t\"delegation\": \"Ariana Ville\",\n\t\"city\": \"Ariana\",\n\t\"lat\": 36.8665,\n\t\"lng\": 10.1647,\n\t\"facilities\": {\n\t\t\"parking\": true,\n\t\t\"women_prayer_area\": true\n\t},\n\t\"muazzin_name\": \"Ahmed\",\n\t\"imam_5_prayers_name\": \"Ali\",\n\t\"imam_jumua_name\": \"Mohamed\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1600000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_suggestions_edit",
+      "parentId": "fld_suggestions",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/suggestions/mosques/1/edits",
+      "name": "Suggest Edit (Patch)",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"patch\": {\n\t\t\"facilities\": {\n\t\t\t\"library\": true\n\t\t},\n\t\t\"imam_jumua_name\": \"Sheikh Salah\"\n\t}\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1500000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_suggestions_confirm",
+      "parentId": "fld_suggestions",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/suggestions/1/confirmations",
+      "name": "Confirm Suggestion",
+      "description": "",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1400000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_moderation_approve_suggestion",
+      "parentId": "fld_moderation",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/moderation/suggestions/1/approve",
+      "name": "Approve Suggestion (Admin)",
+      "description": "",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1700000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_moderation_reject_suggestion",
+      "parentId": "fld_moderation",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "url": "{{ _.base_url }}/moderation/suggestions/1/reject",
+      "name": "Reject Suggestion (Admin)",
+      "description": "",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}"
+      },
+      "metaSortKey": -1600000000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Auth",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1700000000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_mosques",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Mosques",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1600000000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_reviews",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Reviews",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1500000000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_meta",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Meta",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1400000000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_suggestions",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Suggestions & Edits",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1300000000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_moderation",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Moderation (Admin)",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1200000000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "wrk_mosquestn",
+      "parentId": null,
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "MosquesTN API",
+      "description": "API Workspace for MosquesTN project",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_azure",
+      "parentId": "wrk_mosquestn",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Azure Production",
+      "data": {
+        "base_url": "https://mosquestn-api.azurewebsites.net",
+        "access_token": "REPLACE_WITH_JWT"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "access_token"
+        ]
+      },
+      "color": "#007acc",
+      "isPrivate": false,
+      "metaSortKey": 1705320000000,
+      "_type": "environment"
+    },
+    {
+      "_id": "env_local",
+      "parentId": "env_azure",
+      "modified": 1705320000000,
+      "created": 1705320000000,
+      "name": "Localhost",
+      "data": {
+        "base_url": "http://127.0.0.1:5000"
+      },
+      "dataPropertyOrder": null,
+      "color": "#62d264",
+      "isPrivate": false,
+      "metaSortKey": 1705320000001,
+      "_type": "environment"
+    }
+  ]
+}

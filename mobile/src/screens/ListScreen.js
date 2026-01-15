@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, memo, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Image } from 'react-native';
 import { useMosques } from '../context/MosquesContext';
 import { theme } from '../theme';
 import FullScreenLoader from '../components/FullScreenLoader';
@@ -8,16 +8,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getPendingSuggestions } from '../services/api';
 
 export default function ListScreen({ navigation, route }) {
-  const { mosques, loading, error, lastUpdated, refresh } = useMosques();
+  const { mosques, loading, error, refresh } = useMosques();
   const [gov, setGov] = useState(route.params?.initialGov || '');
   const [del, setDel] = useState('');
   const [city, setCity] = useState('');
   
   const [filterMode, setFilterMode] = useState(route.params?.filter || 'all');
-  const [pendingMosques, setPendingMosques] = useState([]);
-  const [loadingPending, setLoadingPending] = useState(false);
 
-  
   // Picker states
   const [govPickerOpen, setGovPickerOpen] = useState(false);
   const [delPickerOpen, setDelPickerOpen] = useState(false);
@@ -27,110 +24,62 @@ export default function ListScreen({ navigation, route }) {
   const [loadingDel, setLoadingDel] = useState(false);
   const [loadingCity, setLoadingCity] = useState(false);
 
-  useEffect(() => {
+  // Derived counts
+  const pendingCount = useMemo(() => {
+    if (!Array.isArray(mosques)) return 0;
+    return mosques.filter(m => m.approved === false).length;
+  }, [mosques]);
+
+  const displayedList = useMemo(() => {
+    const all = Array.isArray(mosques) ? mosques : [];
+    let list = [];
+
+    // 1. Filter by Mode
     if (filterMode === 'pending') {
-      (async () => {
-        setLoadingPending(true);
-        try {
-          const res = await getPendingSuggestions();
-          setPendingMosques(Array.isArray(res) ? res : []);
-        } catch (e) {
-          console.warn('Failed to fetch pending', e);
-        } finally {
-          setLoadingPending(false);
-        }
-      })();
-    }
-  }, [filterMode]);
-
-  useEffect(() => {
-    (async () => {
-      setLoadingDel(true);
-      try {
-        if (gov) {
-          const list = await fetchDelegations(gov);
-          setDelegations(list);
-        } else {
-          setDelegations([]);
-        }
-      } finally {
-        setLoadingDel(false);
-      }
-      setDel('');
-      setCity('');
-      setCities([]);
-    })();
-  }, [gov]);
-
-  useEffect(() => {
-    (async () => {
-      setLoadingCity(true);
-      try {
-        if (gov && del) {
-          const list = await fetchCities(gov, del);
-          setCities(list);
-        } else {
-          setCities([]);
-        }
-      } finally {
-        setLoadingCity(false);
-      }
-      setCity('');
-    })();
-  }, [del]);
-
-  const data = useMemo(() => {
-    let source = [];
-    if (filterMode === 'pending') {
-      source = pendingMosques;
+      list = all.filter(m => m.approved === false);
     } else {
-      source = Array.isArray(mosques) ? mosques : [];
+      list = all.filter(m => m.approved !== false);
     }
-    
-    // First, filter by pending status if requested (for local filtering of main list, though we switched source above)
-    let filtered = source;
-    if (filterMode === 'pending') {
-       // logic handled by source switch, but ensure we don't accidentally mix
-       filtered = source; 
-    } else {
-      // By default show approved only, or standard feed
-      filtered = source.filter(m => m.approved !== false); 
-    }
-    
-    // Apply location filters
+
+    // 2. Filter by Location
     const g = gov.trim().toLowerCase();
     const d = del.trim().toLowerCase();
     const c = city.trim().toLowerCase();
 
-    if (!g && !d && !c) return filtered;
+    if (g || d || c) {
+      list = list.filter(m => {
+        const mg = (m.governorate || '').toLowerCase();
+        const md = (m.delegation || '').toLowerCase();
+        const mc = (m.city || '').toLowerCase();
+        return (!g || mg === g) && (!d || md === d) && (!c || mc === c);
+      });
+    }
 
-    return filtered.filter(m => {
-      const mg = (m.governorate || '').toLowerCase();
-      const md = (m.delegation || '').toLowerCase();
-      const mc = (m.city || '').toLowerCase();
-      return (!g || mg === g) && (!d || md === d) && (!c || mc === c);
-    });
-  }, [mosques, pendingMosques, gov, del, city, filterMode]); // Added pendingMosques dependency
+    return list;
+  }, [mosques, filterMode, gov, del, city]);
+
 
   const governorates = ['All', ...GOVS];
 
-  if (loading && data.length === 0) {
+  // Remove the early return for loading/error to allow UI scaffolding (filters) to show, 
+  // or at least keep the experience consistent. 
+  // But standard pattern:
+  if (loading && displayedList.length === 0 && mosques.length === 0) {
     return <FullScreenLoader message="جارٍ تحميل المساجد…" />;
-  }
-  if (error && data.length === 0) {
-    return (
-      <View style={styles.center}><Text style={styles.error}>{error}</Text></View>
-    );
   }
 
   const Row = memo(function Row({ item, onPress }) {
     return (
       <TouchableOpacity style={styles.row} onPress={() => onPress(item.id)}>
         <View style={styles.iconBox}>
-          <MaterialCommunityIcons name="mosque" size={24} color={theme.colors.primary} />
+          {item.image_url ? (
+            <Image source={{ uri: item.image_url }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+          ) : (
+            <MaterialCommunityIcons name="mosque" size={24} color={theme.colors.primary} />
+          )}
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.title}>{item.arabic_name || item.type || 'Mosque'}</Text>
+          <Text style={styles.title}>{item.arabic_name || item.type || 'Mosque'} {item.approved === false ? '(Pending)' : ''}</Text>
           <Text style={styles.subtitle}>{[item.type, item.city].filter(Boolean).join(' • ')}</Text>
         </View>
         <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.muted} />
@@ -139,6 +88,8 @@ export default function ListScreen({ navigation, route }) {
   });
 
   const onPressItem = useCallback((id) => {
+    // Determine isSuggestion based on current item from actual list, but here we just pass ID.
+    // The list is either pending or not.
     navigation.navigate('MosqueDetail', { id, isSuggestion: filterMode === 'pending' });
   }, [navigation, filterMode]);
 
@@ -155,16 +106,27 @@ export default function ListScreen({ navigation, route }) {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.filters}>
-        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
           <Text style={styles.filterTitle}>
-            {filterMode === 'pending' ? 'Pending Confirmations / مساجد قيد التأكيد' : 'Filter Mosques / تصفية'}
+            {filterMode === 'pending' ? 'Pending Confirmations' : 'Mosques List'}
           </Text>
-          {filterMode === 'pending' && (
-            <TouchableOpacity onPress={() => setFilterMode('all')}>
-              <Text style={{color: theme.colors.primary, fontSize: 12}}>Show All</Text>
-            </TouchableOpacity>
-          )}
+           
+          {/* Toggle Pending / Approved */}
+          <TouchableOpacity 
+            style={[styles.pendingToggle, filterMode === 'pending' && styles.pendingToggleActive]}
+            onPress={() => setFilterMode(prev => prev === 'pending' ? 'all' : 'pending')}
+          >
+            <MaterialCommunityIcons 
+              name={filterMode === 'pending' ? 'check-circle-outline' : 'clock-outline'} 
+              size={14} 
+              color="#fff" 
+            />
+            <Text style={styles.pendingToggleText}>
+              {filterMode === 'pending' ? 'Show Approved' : `Pending (${pendingCount})`}
+            </Text>
+          </TouchableOpacity>
         </View>
+
         <View style={styles.filterRow}>
           <TouchableOpacity style={styles.filterBtn} onPress={() => setGovPickerOpen(true)}>
              <Text style={styles.filterBtnText} numberOfLines={1}>{gov || 'Governorate / ولاية'}</Text>
@@ -180,15 +142,16 @@ export default function ListScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
         <View style={styles.metaRow}>
-          <Text style={styles.metaText}>{data.length} Mosques found</Text>
+          <Text style={styles.metaText}>{displayedList.length} results</Text>
           <TouchableOpacity onPress={() => refresh()}><Text style={styles.refresh}>Refresh</Text></TouchableOpacity>
         </View>
       </View>
 
       <FlatList
-        data={data}
+        data={displayedList}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
+        ListEmptyComponent={<View style={styles.center}><Text style={{marginTop:20, color:theme.colors.muted}}>No mosques found.</Text></View>}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         contentContainerStyle={{ paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg }}
         initialNumToRender={20}
@@ -274,6 +237,11 @@ const styles = StyleSheet.create({
   metaText: { color: theme.colors.muted, fontSize: 12 },
   refresh: { color: theme.colors.primary, fontSize: 12, fontFamily: 'Cairo-Bold' },
   
+  // Pending Toggle
+  pendingToggle: { backgroundColor: theme.colors.secondary, flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, gap: 6 },
+  pendingToggleActive: { backgroundColor: theme.colors.primary },
+  pendingToggleText: { color: '#fff', fontSize: 12, fontFamily: 'Cairo-Bold' },
+
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   modalCard: { width: '85%', maxHeight: '70%', backgroundColor: '#fff', borderRadius: 12, padding: 12 },
   optionRow: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },
