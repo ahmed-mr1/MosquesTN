@@ -5,6 +5,7 @@ import { theme } from '../theme';
 import FullScreenLoader from '../components/FullScreenLoader';
 import { governorates as GOVS, fetchDelegations, fetchCities } from '../services/locations';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { getPendingSuggestions } from '../services/api';
 
 export default function ListScreen({ navigation, route }) {
   const { mosques, loading, error, lastUpdated, refresh } = useMosques();
@@ -13,6 +14,8 @@ export default function ListScreen({ navigation, route }) {
   const [city, setCity] = useState('');
   
   const [filterMode, setFilterMode] = useState(route.params?.filter || 'all');
+  const [pendingMosques, setPendingMosques] = useState([]);
+  const [loadingPending, setLoadingPending] = useState(false);
 
   
   // Picker states
@@ -23,6 +26,22 @@ export default function ListScreen({ navigation, route }) {
   const [cities, setCities] = useState([]);
   const [loadingDel, setLoadingDel] = useState(false);
   const [loadingCity, setLoadingCity] = useState(false);
+
+  useEffect(() => {
+    if (filterMode === 'pending') {
+      (async () => {
+        setLoadingPending(true);
+        try {
+          const res = await getPendingSuggestions();
+          setPendingMosques(Array.isArray(res) ? res : []);
+        } catch (e) {
+          console.warn('Failed to fetch pending', e);
+        } finally {
+          setLoadingPending(false);
+        }
+      })();
+    }
+  }, [filterMode]);
 
   useEffect(() => {
     (async () => {
@@ -61,17 +80,24 @@ export default function ListScreen({ navigation, route }) {
   }, [del]);
 
   const data = useMemo(() => {
-    const arr = Array.isArray(mosques) ? mosques : [];
-    
-    // First, filter by pending status if requested
-    let filtered = arr;
+    let source = [];
     if (filterMode === 'pending') {
-      filtered = arr.filter(m => m.approved === false);
+      source = pendingMosques;
+    } else {
+      source = Array.isArray(mosques) ? mosques : [];
+    }
+    
+    // First, filter by pending status if requested (for local filtering of main list, though we switched source above)
+    let filtered = source;
+    if (filterMode === 'pending') {
+       // logic handled by source switch, but ensure we don't accidentally mix
+       filtered = source; 
     } else {
       // By default show approved only, or standard feed
-      filtered = arr.filter(m => m.approved !== false); 
+      filtered = source.filter(m => m.approved !== false); 
     }
-
+    
+    // Apply location filters
     const g = gov.trim().toLowerCase();
     const d = del.trim().toLowerCase();
     const c = city.trim().toLowerCase();
@@ -84,7 +110,7 @@ export default function ListScreen({ navigation, route }) {
       const mc = (m.city || '').toLowerCase();
       return (!g || mg === g) && (!d || md === d) && (!c || mc === c);
     });
-  }, [mosques, gov, del, city, filterMode]);
+  }, [mosques, pendingMosques, gov, del, city, filterMode]); // Added pendingMosques dependency
 
   const governorates = ['All', ...GOVS];
 
@@ -113,8 +139,8 @@ export default function ListScreen({ navigation, route }) {
   });
 
   const onPressItem = useCallback((id) => {
-    navigation.navigate('MosqueDetail', { id });
-  }, [navigation]);
+    navigation.navigate('MosqueDetail', { id, isSuggestion: filterMode === 'pending' });
+  }, [navigation, filterMode]);
 
   const renderItem = useCallback(({ item }) => (
     <Row item={item} onPress={onPressItem} />

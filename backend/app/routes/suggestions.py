@@ -16,6 +16,22 @@ suggestions_bp = Blueprint(
 )
 
 
+@suggestions_bp.route("/mosques/pending")
+class PendingSuggestionsResource(MethodView):
+    @suggestions_bp.response(200, MosqueSuggestionSchema(many=True))
+    def get(self):
+        items = MosqueSuggestion.query.filter_by(status='pending_approval').order_by(MosqueSuggestion.created_at.desc()).all()
+        return items
+
+
+@suggestions_bp.route("/mosques/<int:suggestion_id>")
+class MosqueSuggestionDetailResource(MethodView):
+    @suggestions_bp.response(200, MosqueSuggestionSchema)
+    def get(self, suggestion_id):
+        item = MosqueSuggestion.query.get_or_404(suggestion_id)
+        return item
+
+
 @suggestions_bp.route("/mosques")
 class MosqueSuggestionsResource(MethodView):
     @suggestions_bp.response(200, MosqueSuggestionSchema(many=True))
@@ -28,6 +44,7 @@ class MosqueSuggestionsResource(MethodView):
             abort(401, message="Invalid token identity")
         items = MosqueSuggestion.query.filter_by(created_by_user_id=user_id).order_by(MosqueSuggestion.created_at.desc()).all()
         return items
+
     @suggestions_bp.arguments(MosqueSuggestionCreateSchema)
     @suggestions_bp.response(201, MosqueSuggestionSchema)
     @jwt_required()

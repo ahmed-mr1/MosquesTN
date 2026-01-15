@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { getMosque, getMosqueReviews, postMosqueReview, confirmMosque } from '../services/api';
+import { getMosque, getMosqueReviews, postMosqueReview, confirmMosque, getMosqueSuggestion, confirmSuggestion } from '../services/api';
 
 export default function MosqueDetailScreen({ route, navigation }) {
-  const { id } = route.params || {};
+  const { id, isSuggestion } = route.params || {};
   const [mosque, setMosque] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,34 +16,34 @@ export default function MosqueDetailScreen({ route, navigation }) {
     setLoading(true);
     setError('');
     try {
-      const [m, r] = await Promise.all([
-        getMosque(id),
-        getMosqueReviews(id),
-      ]);
-      setMosque(m);
-      setReviews(Array.isArray(r) ? r : []);
+      if (isSuggestion) {
+        const m = await getMosqueSuggestion(id);
+        setMosque(m);
+        setReviews([]);
+      } else {
+        const [m, r] = await Promise.all([
+          getMosque(id),
+          getMosqueReviews(id),
+        ]);
+        setMosque(m);
+        setReviews(Array.isArray(r) ? r : []);
+      }
     } catch (e) {
       setError(e?.message || String(e));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isSuggestion]);
 
   useEffect(() => { load(); }, [load]);
 
-  const submitQuickReview = async () => {
-    try {
-      await postMosqueReview(id, { rating: 5, content: 'جميل ونظيف' });
-      Alert.alert('Review sent', 'Pending moderation');
-      await load();
-    } catch (e) {
-      Alert.alert('Error', e?.message || 'Failed to submit review');
-    }
-  };
-
   const confirm = async () => {
     try {
-      await confirmMosque(id);
+      if (isSuggestion) {
+        await confirmSuggestion(id);
+      } else {
+        await confirmMosque(id);
+      }
       Alert.alert('Thank you', 'Your confirmation was recorded');
       await load();
     } catch (e) {
@@ -107,6 +107,7 @@ export default function MosqueDetailScreen({ route, navigation }) {
         </View>
       </View>
 
+      {!isSuggestion && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Reviews / التقييمات</Text>
         {reviews.length === 0 ? (
@@ -130,8 +131,9 @@ export default function MosqueDetailScreen({ route, navigation }) {
           ))
         )}
       </View>
+      )}
 
-      {mosque.approved !== false ? (
+      {(!isSuggestion && mosque.approved !== false) ? (
         <TouchableOpacity style={[styles.btn, styles.primary]} onPress={() => navigation.navigate('Review', { mosqueId: id, mosqueName: mosque.arabic_name })}>
           <Text style={styles.btnText}>Write a Review / أكتب تقييم</Text>
         </TouchableOpacity>

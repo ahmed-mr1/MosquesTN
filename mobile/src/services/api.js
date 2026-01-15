@@ -50,6 +50,16 @@ export async function getMosqueReviews(id, params = {}) {
   return data;
 }
 
+export async function getPendingSuggestions() {
+  const { data } = await api.get('/suggestions/mosques/pending');
+  return data;
+}
+
+export async function getMosqueSuggestion(id) {
+  const { data } = await api.get(`/suggestions/mosques/${id}`);
+  return data;
+}
+
 export async function postMosqueReview(id, body) {
   const { data } = await api.post(`/mosques/${id}/reviews`, body);
   return data;
@@ -75,6 +85,13 @@ export async function suggestMosque(body) {
 
 // Confirmations
 export async function confirmMosque(id) {
+  // This endpoint might not exist if confirmations are only for suggestions
+  // But let's keep it if legacy.
   const { data } = await api.post(`/mosques/${id}/confirmations`);
+  return data;
+}
+
+export async function confirmSuggestion(id) {
+  const { data } = await api.post(`/suggestions/${id}/confirmations`);
   return data;
 }

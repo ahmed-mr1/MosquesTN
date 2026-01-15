@@ -14,6 +14,7 @@ export default function HomeScreen({ navigation }) {
   const [hijriDate, setHijriDate] = useState('');
   const { jwt, signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [activeDua, setActiveDua] = useState(0);
 
   const fetchData = async () => {
     try {
@@ -165,28 +166,47 @@ export default function HomeScreen({ navigation }) {
         />
       </View>
 
-      {/* Daily Content / Hadith */}
-      <View style={styles.dailyCard}>
-        <View style={styles.dailyHeader}>
-          <MaterialCommunityIcons name="book-open-page-variant" size={20} color={theme.colors.primary} />
-          <Text style={styles.dailyTitle}>Daily Wisdom / حكمة اليوم</Text>
-        </View>
-        <Text style={styles.dailyText}>
-          "The best among you are those who have the best manners and character."
+      <View style={styles.verseCard}>
+        <MaterialCommunityIcons name="book-open-page-variant-outline" size={32} color={theme.colors.accent} style={{ alignSelf: 'center', marginBottom: 12, opacity: 0.8 }} />
+        <Text style={styles.verseText}>
+          فِي بُيُوتٍ أَذِنَ اللَّهُ أَن تُرْفَعَ وَيُذْكَرَ فِيهَا اسْمُهُ يُسَبِّحُ لَهُ فِيهَا بِالْغُدُوِّ وَالْآصَالِ
         </Text>
-        <Text style={styles.dailySource}>Sahih al-Bukhari</Text>
+        <Text style={styles.verseSource}>[سورة النور: 36]</Text>
       </View>
 
-      {allPrayers && (
-        <View style={styles.miniTimesRow}>
-           {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((p, i) => (
-             <View key={i} style={styles.miniTimeItem}>
-               <Text style={styles.miniTimeName}>{p[0]}</Text>
-               <Text style={styles.miniTimeValue}>{allPrayers[p]}</Text>
-             </View>
-           ))}
+      {/* Mosque Duas Section */}
+      <View style={styles.duaCard}>
+        <View style={styles.duaHeader}>
+          <View style={styles.duaToggle}>
+            <TouchableOpacity onPress={() => setActiveDua(0)} style={[styles.duaTab, activeDua === 0 && styles.duaTabActive]}>
+              <Text style={[styles.duaTabText, activeDua === 0 && styles.duaTabTextActive]}>الدخول</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveDua(1)} style={[styles.duaTab, activeDua === 1 && styles.duaTabActive]}>
+              <Text style={[styles.duaTabText, activeDua === 1 && styles.duaTabTextActive]}>الخروج</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{flexDirection:'row', alignItems:'center'}}>
+            <Text style={styles.duaTitle}>أدعية المسجد</Text>
+            <MaterialCommunityIcons name="hands-pray" size={24} color={theme.colors.primary} style={{ marginLeft: 8 }} />
+          </View>
         </View>
-      )}
+
+        <View style={styles.duaContent}>
+          {activeDua === 0 ? (
+            <View>
+              <Text style={styles.duaLabel}> دعاء الدخول إلى المسجد</Text>
+              <Text style={styles.duaArabic}>بِسْمِ اللهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ، اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ</Text>
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.duaLabel}> دعاء الخروج من المسجد</Text>
+              <Text style={styles.duaArabic}>بِسْمِ اللهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      
 
       {/* Menu Modal */}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -243,10 +263,22 @@ const styles = StyleSheet.create({
   dailyText: { fontSize: 15, color: theme.colors.text, lineHeight: 24, fontStyle: 'italic', marginBottom: 8 },
   dailySource: { fontSize: 12, color: theme.colors.muted, textAlign: 'right', fontWeight: 'bold' },
 
-  miniTimesRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 16, padding: 16, elevation: 1 },
-  miniTimeItem: { alignItems: 'center' },
-  miniTimeName: { fontSize: 12, color: theme.colors.muted, marginBottom: 4, fontWeight: 'bold' },
-  miniTimeValue: { fontSize: 14, color: theme.colors.text, fontFamily: 'Cairo-Bold' },
+  duaCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  duaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  duaTitle: { fontSize: 18, fontFamily: 'Cairo-Bold', color: theme.colors.text },
+  duaToggle: { flexDirection: 'row', backgroundColor: '#f0f0f0', borderRadius: 20, padding: 2 },
+  duaTab: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 18 },
+  duaTabActive: { backgroundColor: theme.colors.primary },
+  duaTabText: { fontSize: 12, fontFamily: 'Cairo-Bold', color: theme.colors.muted },
+  duaTabTextActive: { color: '#fff' },
+  duaContent: { padding: 8 },
+  duaLabel: { fontSize: 13, color: theme.colors.secondary, fontFamily: 'Cairo-Bold', marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' },
+  duaArabic: { fontSize: 20, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', marginBottom: 16, lineHeight: 40 },
+  duaTranslation: { fontSize: 14, color: theme.colors.muted, textAlign: 'center', fontStyle: 'italic', fontFamily: 'Cairo-Medium' },
+
+  verseCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, marginBottom: 24, alignItems: 'center', borderTopWidth: 4, borderTopColor: theme.colors.accent, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  verseText: { fontSize: 22, fontFamily: 'Cairo-Bold', color: theme.colors.text, textAlign: 'center', lineHeight: 40, marginBottom: 12 },
+  verseSource: { fontSize: 14, color: theme.colors.accent, fontFamily: 'Cairo-Bold' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
