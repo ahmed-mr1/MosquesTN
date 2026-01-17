@@ -69,21 +69,22 @@ def upload_file():
 
         except Exception as e:
             current_app.logger.error(f"Azure Upload Error: {str(e)}")
-            abort(500, message="Failed to save image to cloud storage.")
+            current_app.logger.info("Azure upload failed. Falling back to local storage.")
+            # Do NOT return/abort here; allow flow to proceed to Path B (Local Fallback)
+            pass
 
-    else:
-        # --- PATH B: UPLOAD TO LOCAL STORAGE (FALLBACK/DEV) ---
-        # Note: Files here disappear on Azure redeployment!
-        local_folder = os.path.join(os.getcwd(), "uploads")
-        os.makedirs(local_folder, exist_ok=True)
-        
-        file_path = os.path.join(local_folder, unique_name)
-        file.seek(0)
-        file.save(file_path)
-        
-        # Generate local URL
-        file_url = url_for("upload.serve_file", filename=unique_name, _external=True)
-        return {"url": file_url}, 201
+    # --- PATH B: UPLOAD TO LOCAL STORAGE (FALLBACK/DEV) ---
+    # Note: Files here disappear on Azure redeployment!
+    local_folder = os.path.join(os.getcwd(), "uploads")
+    os.makedirs(local_folder, exist_ok=True)
+    
+    file_path = os.path.join(local_folder, unique_name)
+    file.seek(0)
+    file.save(file_path)
+    
+    # Generate local URL
+    file_url = url_for("upload.serve_file", filename=unique_name, _external=True)
+    return {"url": file_url}, 201
 
 @upload_bp.route("/<path:filename>", methods=["GET"])
 def serve_file(filename):

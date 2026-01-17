@@ -7,20 +7,24 @@ export const BASE_URL = extra.backendBaseUrl || 'https://mosquestn-api.azurewebs
 export const api = axios.create({ baseURL: BASE_URL, timeout: 20000 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('jwt');
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const token = await AsyncStorage.getItem('jwt');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (e) {
+    console.error('Failed to attach token', e);
   }
   return config;
 });
 
 // Auth
 export async function login(credentials) {
-  // Backend provides /auth/firebase/verify accepting id_token
-  const role = credentials?.role || 'authenticated';
-  const payload = { id_token: role };
-  const { data } = await api.post('/auth/firebase/verify', payload);
+  // Simple dev login
+  const role = credentials?.role || 'user';
+  const payload = { role };
+  const { data } = await api.post('/auth/login', payload);
   const jwt = data?.access_token;
   if (jwt) await AsyncStorage.setItem('jwt', jwt);
   return jwt;

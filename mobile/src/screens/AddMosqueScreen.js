@@ -13,7 +13,7 @@ export default function AddMosqueScreen({ navigation }) {
   const { jwt } = useAuth();
   const [form, setForm] = useState({
     arabic_name: '',
-    type: '',
+    type: 'جامع',
     governorate: '',
     delegation: '',
     city: '',
@@ -142,10 +142,11 @@ export default function AddMosqueScreen({ navigation }) {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        legacy: true,
       });
 
       if (!result.canceled) {
@@ -217,7 +218,7 @@ export default function AddMosqueScreen({ navigation }) {
 
       const payload = {
         arabic_name: form.arabic_name,
-        type: (form.type && form.type.trim()) ? form.type.trim() : 'mosque',
+        type: (form.type && form.type.trim()) ? form.type.trim() : 'جامع',
         governorate: form.governorate,
         delegation: form.delegation || undefined,
         city: form.city,
@@ -243,6 +244,12 @@ export default function AddMosqueScreen({ navigation }) {
       Alert.alert('Submitted', 'Your suggestion was submitted. Pending moderation.');
       navigation.goBack();
     } catch (e) {
+      if (e.message && (e.message.includes('401') || e.message.toLowerCase().includes('unauthorized'))) {
+        Alert.alert('Session Expired', 'Please log in again to restore your session.', [
+          { text: 'Login', onPress: () => navigation.navigate('Login') }
+        ]);
+        return;
+      }
       Alert.alert('Error', e?.message || 'Failed to submit');
     } finally {
       setSubmitting(false);
@@ -273,7 +280,7 @@ export default function AddMosqueScreen({ navigation }) {
       <View style={styles.row}>
         <Text style={styles.label}>Type / النوع</Text>
         <TouchableOpacity style={styles.input} onPress={()=>setTypePickerOpen(true)}>
-          <Text style={{ color: form.type ? theme.colors.text : theme.colors.muted }}>{form.type || 'Select Type / اختر النوع'}</Text>
+          <Text style={{ color: form.type ? theme.colors.text : theme.colors.muted }}>{form.type || 'اختر النوع'}</Text>
         </TouchableOpacity>
       </View>
       {/* 2. Location Selectors */}
@@ -400,9 +407,9 @@ export default function AddMosqueScreen({ navigation }) {
           <View style={styles.modalCard}>
             <FlatList
               data={[
-                { label: 'Mosque / مسجد', value: 'mosque' },
-                { label: 'Jamii / جامع', value: 'jamii' },
-                { label: 'Musalla / مصلى', value: 'musalla' },
+                { label: 'جامع', value: 'جامع' },
+                { label: 'مسجد', value: 'مسجد' },
+                { label: 'مصلى', value: 'مصلى' },
               ]}
               keyExtractor={(item, idx)=>String(idx)}
               renderItem={({ item }) => (

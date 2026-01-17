@@ -7,24 +7,26 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth", description="Authentication endpoints")
 
 
-@auth_bp.route("/firebase/verify", methods=["POST"])
-def firebase_verify():
-    # Dev stub: accept id_token and issue JWT with string identity (sub)
+@auth_bp.route("/login", methods=["POST"])
+def login():
+    # Dev Stub: Simple login for development/testing
     data = request.get_json(silent=True) or {}
-    id_token = request.args.get("id_token") or data.get("id_token")
-    if not id_token:
-        return {"message": "id_token is required"}, 400
-    # Simple role mapping for dev/testing: pass id_token 'admin' or 'moderator' to set role
+    # Accept 'username' or 'role' to determine permissions
+    username = data.get("username") or data.get("role") or "user"
+    
     role = "authenticated"
-    if isinstance(id_token, str):
-        lowered = id_token.strip().lower()
+    if isinstance(username, str):
+        lowered = username.strip().lower()
         if lowered in ("admin", "moderator"):
             role = lowered
-    user_id = "1"  # use a fixed dev user id as string
+
+    # Fixed ID for dev; in production this would verify password and get real ID
+    user_id = "1" 
+    
     token = create_access_token(
         identity=user_id,
-        expires_delta=timedelta(hours=12),
-        additional_claims={"provider": "firebase", "role": role},
+        expires_delta=timedelta(days=7), # Longer session for dev
+        additional_claims={"role": role},
     )
     return {"access_token": token}, 200
 
