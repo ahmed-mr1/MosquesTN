@@ -1,251 +1,96 @@
-import React, { useMemo, useState, useCallback, memo, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Image } from 'react-native';
-import { useMosques } from '../context/MosquesContext';
+﻿import React, { useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, TextInput, RefreshControl } from 'react-native';
 import { theme } from '../theme';
-import FullScreenLoader from '../components/FullScreenLoader';
-import { governorates as GOVS, fetchDelegations, fetchCities } from '../services/locations';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getPendingSuggestions } from '../services/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { useMosques } from '../context/MosquesContext';
 
-export default function ListScreen({ navigation, route }) {
-  const { mosques, loading, error, refresh } = useMosques();
-  const [gov, setGov] = useState(route.params?.initialGov || '');
-  const [del, setDel] = useState('');
-  const [city, setCity] = useState('');
-  
-  const [filterMode, setFilterMode] = useState(route.params?.filter || 'all');
+export default function ListScreen() {
+    const { role } = useAuth();
+    const navigation = useNavigation();
+    const { mosques, loading, refresh } = useMosques();
+    const [search, setSearch] = useState('');
 
-  // Picker states
-  const [govPickerOpen, setGovPickerOpen] = useState(false);
-  const [delPickerOpen, setDelPickerOpen] = useState(false);
-  const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [delegations, setDelegations] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [loadingDel, setLoadingDel] = useState(false);
-  const [loadingCity, setLoadingCity] = useState(false);
+    const filteredItems = mosques.filter(m => {
+        if(!search) return true;
+        const term = search.toLowerCase();
+        const name = (m.arabic_name || '').toLowerCase();
+        const city = (m.city || '').toLowerCase();
+        return name.includes(term) || city.includes(term);
+    });
 
-  // Derived counts
-  const pendingCount = useMemo(() => {
-    if (!Array.isArray(mosques)) return 0;
-    return mosques.filter(m => m.approved === false).length;
-  }, [mosques]);
-
-  const displayedList = useMemo(() => {
-    const all = Array.isArray(mosques) ? mosques : [];
-    let list = [];
-
-    // 1. Filter by Mode
-    if (filterMode === 'pending') {
-      list = all.filter(m => m.approved === false);
-    } else {
-      list = all.filter(m => m.approved !== false);
-    }
-
-    // 2. Filter by Location
-    const g = gov.trim().toLowerCase();
-    const d = del.trim().toLowerCase();
-    const c = city.trim().toLowerCase();
-
-    if (g || d || c) {
-      list = list.filter(m => {
-        const mg = (m.governorate || '').toLowerCase();
-        const md = (m.delegation || '').toLowerCase();
-        const mc = (m.city || '').toLowerCase();
-        return (!g || mg === g) && (!d || md === d) && (!c || mc === c);
-      });
-    }
-
-    return list;
-  }, [mosques, filterMode, gov, del, city]);
-
-
-  const governorates = ['All', ...GOVS];
-
-  // Remove the early return for loading/error to allow UI scaffolding (filters) to show, 
-  // or at least keep the experience consistent. 
-  // But standard pattern:
-  if (loading && displayedList.length === 0 && mosques.length === 0) {
-    return <FullScreenLoader message="جارٍ تحميل المساجد…" />;
-  }
-
-  const Row = memo(function Row({ item, onPress }) {
-    return (
-      <TouchableOpacity style={styles.row} onPress={() => onPress(item.id)}>
-        <View style={styles.iconBox}>
-          {item.image_url ? (
-            <Image source={{ uri: item.image_url }} style={{ width: 40, height: 40, borderRadius: 20 }} />
-          ) : (
-            <MaterialCommunityIcons name="mosque" size={24} color={theme.colors.primary} />
-          )}
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.title}>{item.arabic_name || item.type || 'Mosque'} {item.approved === false ? '(Pending)' : ''}</Text>
-          <Text style={styles.subtitle}>{[item.type, item.city].filter(Boolean).join(' • ')}</Text>
-        </View>
-        <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.muted} />
-      </TouchableOpacity>
+    const renderItem = ({ item }) => (
+        <TouchableOpacity 
+            style={[styles.card, item.isSuggestion && styles.suggestionCard]} 
+            onPress={() => navigation.navigate('MosqueDetail', { mosque: item, isSuggestion: item.isSuggestion })}
+        >
+            <Image 
+                source={item.image_url ? { uri: item.image_url } : require('../../assets/adaptive-icon.png')} 
+                style={styles.image} 
+            />
+            <View style={styles.info}>
+                <Text style={styles.name}>{item.arabic_name}</Text>
+                <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 5, alignItems: 'center'}}>
+                   <Text style={styles.address}>{item.city}, {item.governorate}</Text>
+                   <MaterialCommunityIcons name="map-marker" size={14} color="#666" />
+                </View>
+                {item.isSuggestion && (
+                    <View style={styles.pendingBadge}>
+                        <MaterialCommunityIcons name="clock-outline" size={12} color="#fff" style={{marginRight: 4}} />
+                        <Text style={styles.pendingText}>Pending Confirmation ({item.confirmations_count || 0}/3)</Text>
+                    </View>
+                )}
+            </View>
+        </TouchableOpacity>
     );
-  });
 
-  const onPressItem = useCallback((id) => {
-    // Determine isSuggestion based on current item from actual list, but here we just pass ID.
-    // The list is either pending or not.
-    navigation.navigate('MosqueDetail', { id, isSuggestion: filterMode === 'pending' });
-  }, [navigation, filterMode]);
-
-  const renderItem = useCallback(({ item }) => (
-    <Row item={item} onPress={onPressItem} />
-  ), [onPressItem]);
-
-  useEffect(() => {
-    if (route.params?.filter) {
-      setFilterMode(route.params.filter);
-    }
-  }, [route.params?.filter]);
-
-  return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={styles.filters}>
-        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
-          <Text style={styles.filterTitle}>
-            {filterMode === 'pending' ? 'Pending Confirmations' : 'Mosques List'}
-          </Text>
-           
-          {/* Toggle Pending / Approved */}
-          <TouchableOpacity 
-            style={[styles.pendingToggle, filterMode === 'pending' && styles.pendingToggleActive]}
-            onPress={() => setFilterMode(prev => prev === 'pending' ? 'all' : 'pending')}
-          >
-            <MaterialCommunityIcons 
-              name={filterMode === 'pending' ? 'check-circle-outline' : 'clock-outline'} 
-              size={14} 
-              color="#fff" 
-            />
-            <Text style={styles.pendingToggleText}>
-              {filterMode === 'pending' ? 'Show Approved' : `Pending (${pendingCount})`}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterBtn} onPress={() => setGovPickerOpen(true)}>
-             <Text style={styles.filterBtnText} numberOfLines={1}>{gov || 'Governorate / ولاية'}</Text>
-             <MaterialCommunityIcons name="chevron-down" size={16} color={theme.colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.filterBtn, !gov && styles.disabled]} disabled={!gov} onPress={() => setDelPickerOpen(true)}>
-             <Text style={styles.filterBtnText} numberOfLines={1}>{del || 'Delegation / معتمدية'}</Text>
-             <MaterialCommunityIcons name="chevron-down" size={16} color={theme.colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.filterBtn, !del && styles.disabled]} disabled={!del} onPress={() => setCityPickerOpen(true)}>
-             <Text style={styles.filterBtnText} numberOfLines={1}>{city || 'City / مدينة'}</Text>
-             <MaterialCommunityIcons name="chevron-down" size={16} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaText}>{displayedList.length} results</Text>
-          <TouchableOpacity onPress={() => refresh()}><Text style={styles.refresh}>Refresh</Text></TouchableOpacity>
-        </View>
-      </View>
-
-      <FlatList
-        data={displayedList}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
-        ListEmptyComponent={<View style={styles.center}><Text style={{marginTop:20, color:theme.colors.muted}}>No mosques found.</Text></View>}
-        ItemSeparatorComponent={() => <View style={styles.sep} />}
-        contentContainerStyle={{ paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg }}
-        initialNumToRender={20}
-        maxToRenderPerBatch={20}
-        updateCellsBatchingPeriod={50}
-        windowSize={7}
-        removeClippedSubviews
-      />
-
-      <Modal visible={govPickerOpen} transparent animationType="fade" onRequestClose={() => setGovPickerOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <FlatList
-              data={governorates}
-              keyExtractor={(item, idx) => String(idx)}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.optionRow} onPress={() => { setGov(item === 'All' ? '' : item); setGovPickerOpen(false); }}>
-                  <Text style={styles.optionText}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={styles.modalClose} onPress={() => setGovPickerOpen(false)}><Text style={styles.modalCloseText}>Close</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={delPickerOpen} transparent animationType="fade" onRequestClose={() => setDelPickerOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            {loadingDel ? <ActivityIndicator color={theme.colors.primary} /> : (
-              <FlatList
-                data={['All', ...delegations]}
-                keyExtractor={(item, idx) => String(idx)}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.optionRow} onPress={() => { setDel(item === 'All' ? '' : item); setDelPickerOpen(false); }}>
-                    <Text style={styles.optionText}>{item}</Text>
-                  </TouchableOpacity>
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <View style={styles.searchBox}>
+                    <MaterialCommunityIcons name="magnify" size={24} color="#666" />
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="Search / ابحث عن مسجد..." 
+                        value={search}
+                        onChangeText={setSearch}
+                    />
+                     {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><MaterialCommunityIcons name="close" size={20} color="#666" /></TouchableOpacity>}
+                </View>
+                {role !== 'guest' && (
+                    <TouchableOpacity onPress={() => navigation.navigate('AddMosque')} style={{marginLeft: 10}}>
+                        <MaterialCommunityIcons name="plus-circle" size={40} color={theme.colors.primary} />
+                    </TouchableOpacity>
                 )}
-              />
+            </View>
+            
+            {loading && mosques.length === 0 ? <ActivityIndicator size="large" color={theme.colors.primary} style={{marginTop: 50}} /> : (
+                 <FlatList 
+                    data={filteredItems} 
+                    renderItem={renderItem} 
+                    keyExtractor={i => (i.isSuggestion ? 's_' : 'm_') + i.id} 
+                    contentContainerStyle={{padding: 16}} 
+                    refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
+                    ListEmptyComponent={<Text style={{textAlign:'center', marginTop: 20, color: '#666'}}>No mosques found.</Text>}
+                 />
             )}
-            <TouchableOpacity style={styles.modalClose} onPress={() => setDelPickerOpen(false)}><Text style={styles.modalCloseText}>Close</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={cityPickerOpen} transparent animationType="fade" onRequestClose={() => setCityPickerOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            {loadingCity ? <ActivityIndicator color={theme.colors.primary} /> : (
-              <FlatList
-                data={['All', ...cities]}
-                keyExtractor={(item, idx) => String(idx)}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.optionRow} onPress={() => { setCity(item === 'All' ? '' : item); setCityPickerOpen(false); }}>
-                    <Text style={styles.optionText}>{item}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
-            <TouchableOpacity style={styles.modalClose} onPress={() => setCityPickerOpen(false)}><Text style={styles.modalCloseText}>Close</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </View>
-  );
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  error: { color: '#c00' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, backgroundColor: '#fff', marginBottom: 8, paddingHorizontal: 12, borderRadius: 12, elevation: 1 },
-  iconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.primary + '10', alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: 'Cairo-Bold', fontSize: 16, color: theme.colors.text },
-  subtitle: { color: theme.colors.muted, fontSize: 13, marginTop: 2, fontFamily: 'Cairo-Regular' },
-  sep: { height: 0 },
-  filters: { padding: theme.spacing.md, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  filterTitle: { fontFamily: 'Cairo-Bold', fontSize: 14, marginBottom: 8, color: theme.colors.text },
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  filterBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#eee', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 10 },
-  filterBtnText: { fontSize: 12, color: theme.colors.text, flex: 1, fontFamily: 'Cairo-Medium' },
-  disabled: { opacity: 0.5, backgroundColor: '#f0f0f0' },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  metaText: { color: theme.colors.muted, fontSize: 12 },
-  refresh: { color: theme.colors.primary, fontSize: 12, fontFamily: 'Cairo-Bold' },
-  
-  // Pending Toggle
-  pendingToggle: { backgroundColor: theme.colors.secondary, flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, gap: 6 },
-  pendingToggleActive: { backgroundColor: theme.colors.primary },
-  pendingToggleText: { color: '#fff', fontSize: 12, fontFamily: 'Cairo-Bold' },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
-  modalCard: { width: '85%', maxHeight: '70%', backgroundColor: '#fff', borderRadius: 12, padding: 12 },
-  optionRow: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },
-  optionText: { color: theme.colors.text, fontSize: 16, fontFamily: 'Cairo-Medium' },
-  modalClose: { marginTop: 8, alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: theme.colors.primary, borderRadius: 8 },
-  modalCloseText: { color: '#fff' },
+    container: { flex: 1, backgroundColor: '#f9f9f9' },
+    header: { flexDirection: 'row', padding: 12, alignItems: 'center', backgroundColor: '#fff', elevation: 2 },
+    searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 8, paddingHorizontal: 10, height: 44 },
+    input: { flex: 1, marginLeft: 8, textAlign: 'right', fontFamily: 'Cairo-Regular' },
+    card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, marginBottom: 12, padding: 10, elevation: 2, alignItems: 'center' },
+    suggestionCard: { borderLeftWidth: 4, borderLeftColor: '#f57c00', backgroundColor: '#fffbf0' },
+    image: { width: 70, height: 70, borderRadius: 8, backgroundColor: '#eee' },
+    info: { marginLeft: 12, flex: 1, justifyContent: 'center' },
+    name: { fontSize: 16, fontFamily: 'Amiri-Bold', marginBottom: 4, textAlign: 'right', color: '#333' },
+    address: { fontSize: 13, color: '#666', textAlign: 'right', fontFamily: 'Cairo-Regular' },
+    pendingBadge: { alignSelf: 'flex-end', backgroundColor: '#f57c00', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+    pendingText: { color: '#fff', fontSize: 10, fontWeight: 'bold' }
 });

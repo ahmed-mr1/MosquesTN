@@ -21,7 +21,7 @@ class Mosque(db.Model):
 
     iqama_times_json = db.Column(db.JSON, default=dict)  # {fajr,dhuhr,asr,maghrib,isha}
     jumuah_time = db.Column(db.String(20))
-    eid_prayer_time = db.Column(db.String(20))
+    eid_prayer_time = db.Column(db.String(255))
 
     # Staff
     muazzin_name = db.Column(db.String(120))
@@ -48,7 +48,7 @@ class Mosque(db.Model):
             "facilities": self.facilities_json or {},
             "iqama_times": self.iqama_times_json or {},
             "jumuah_time": self.jumuah_time,
-            "eid_info": self.eid_info,
+            "eid_info": self.eid_prayer_time,
             "muazzin_name": self.muazzin_name,
             "imam_5_prayers_name": self.imam_5_prayers_name,
             "imam_jumua_name": self.imam_jumua_name,

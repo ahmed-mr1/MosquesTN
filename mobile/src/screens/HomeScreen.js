@@ -137,6 +137,13 @@ export default function HomeScreen({ navigation }) {
       {/* Quick Actions Grid */}
       <View style={styles.gridContainer}>
         <ActionCard 
+          icon="map-marker-radius"
+          title="Nearby Mosques"
+          subtitle="مساجد قريبة"
+          color="#29D6C6"
+          onPress={() => navigation.navigate('NearbyMosques')}
+        />
+        <ActionCard 
           icon="map-search" 
           title="Find Mosques" 
           subtitle="البحث عن المساجد" 
@@ -163,6 +170,13 @@ export default function HomeScreen({ navigation }) {
           subtitle="أوقات الصلاة" 
           color="#8E44AD" 
           onPress={() => navigation.navigate('PrayerTimes')} 
+        />
+        <ActionCard 
+          icon="dots-horizontal-circle-outline" 
+          title="Digital Tasbih" 
+          subtitle="مسبحة إلكترونية" 
+          color="#E74C3C" 
+          onPress={() => navigation.navigate('Tasbih')} 
         />
       </View>
 

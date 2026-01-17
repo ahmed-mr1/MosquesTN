@@ -14,13 +14,13 @@ def login():
     password = data.get("password")
     role_req = data.get("role")
 
-    # 1. Mobile App Guest/User Login (No credentials, just role="user")
+    # 1. Mobile App Guest/User Login (No credentials, just role="guest")
     if not username and role_req == "user":
         # Security: Allow anonymous/guest login but map to a restrictive role
         # We find or create a 'guest' user in the DB so that user_id is valid
         guest = User.query.filter_by(username="guest").first()
         if not guest:
-            guest = User(username="guest", role="user")
+            guest = User(username="guest", role="guest")
             guest.set_password("guest_access_key_123") # Internal implementation detail
             db.session.add(guest)
             db.session.commit()
@@ -28,9 +28,9 @@ def login():
         token = create_access_token(
             identity=str(guest.id),
             expires_delta=timedelta(days=365), # Long lived for app
-            additional_claims={"role": "user"}
+            additional_claims={"role": "guest"}
         )
-        return {"access_token": token, "role": "user", "user_id": guest.id}, 200
+        return {"access_token": token, "role": "guest", "user_id": guest.id}, 200
 
     # 2. Admin/Moderator Login (Requires Username + Password)
     if not username:

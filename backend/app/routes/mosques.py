@@ -1,7 +1,8 @@
 from math import cos, radians
 from flask_smorest import Blueprint, abort
-from ..models import Mosque
+from ..models import Mosque, MosqueSuggestion
 from ..schemas.mosque import MosqueSchema, MosqueListQuerySchema, NearbyQuerySchema
+from ..schemas.suggestion import MosqueSuggestionSchema
 
 mosques_bp = Blueprint(
     "mosques", __name__, url_prefix="/mosques", description="Approved mosques read endpoints"
@@ -16,6 +17,7 @@ def list_mosques(args):
     governorate = args.get("governorate")
     city = args.get("city")
     mtype = args.get("type")
+    search = args.get("search")
 
     if governorate:
         query = query.filter(Mosque.governorate.ilike(f"%{governorate}%"))
@@ -23,11 +25,19 @@ def list_mosques(args):
         query = query.filter(Mosque.city.ilike(f"%{city}%"))
     if mtype:
         query = query.filter(Mosque.type == mtype)
+    if search:
+        query = query.filter(Mosque.arabic_name.ilike(f"%{search}%"))
 
-    limit = min(int(args.get("limit", 20)), 100)
+    limit = min(int(args.get("limit", 50)), 500)
     offset = int(args.get("offset", 0))
     items = query.offset(offset).limit(limit).all()
     return items
+
+@mosques_bp.route("/suggestions/public")
+@mosques_bp.response(200, MosqueSuggestionSchema(many=True))
+def list_public_suggestions():
+    # Helper to get all pending suggestions for public confirmation
+    return MosqueSuggestion.query.filter_by(status='pending_approval').order_by(MosqueSuggestion.created_at.desc()).all()
 
 
 @mosques_bp.route("/<int:mosque_id>")

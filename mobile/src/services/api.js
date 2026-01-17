@@ -22,12 +22,18 @@ api.interceptors.request.use(async (config) => {
 // Auth
 export async function login(credentials) {
   // Simple dev login
-  const role = credentials?.role || 'user';
-  const payload = { role };
+  // credentials can be { role: 'user' } for guest or { username, password } for admin
+  const payload = credentials.username ? credentials : { role: 'user' };
+  
   const { data } = await api.post('/auth/login', payload);
   const jwt = data?.access_token;
-  if (jwt) await AsyncStorage.setItem('jwt', jwt);
-  return jwt;
+  const role = data?.role || 'user';
+  
+  if (jwt) {
+    await AsyncStorage.setItem('jwt', jwt);
+    await AsyncStorage.setItem('role', role);
+  }
+  return { jwt, role };
 }
 
 // Removed local demo token fallback to ensure real JWT from backend
@@ -56,6 +62,11 @@ export async function getMosqueReviews(id, params = {}) {
 
 export async function getPendingSuggestions() {
   const { data } = await api.get('/suggestions/mosques/pending');
+  return data;
+}
+
+export async function getPublicSuggestions() {
+  const { data } = await api.get('/mosques/suggestions/public');
   return data;
 }
 

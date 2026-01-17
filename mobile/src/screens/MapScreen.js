@@ -1,13 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, Modal, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+﻿import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions, Modal, TouchableOpacity, FlatList, ActivityIndicator, TextInput } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import { theme } from '../theme';
 import { useMosques } from '../context/MosquesContext';
 import FullScreenLoader from '../components/FullScreenLoader';
 import { governorates as GOVS, fetchDelegations, fetchCities } from '../services/locations';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-const { width, height } = Dimensions.get('window');
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MapScreen({ navigation }) {
   const { mosques, loading, error } = useMosques();
@@ -16,6 +15,8 @@ export default function MapScreen({ navigation }) {
   const [del, setDel] = useState('');
   const [city, setCity] = useState('');
   
+  const [search, setSearch] = useState(''); // Added Search state
+
   const [govPickerOpen, setGovPickerOpen] = useState(false);
   const [delPickerOpen, setDelPickerOpen] = useState(false);
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
@@ -24,8 +25,6 @@ export default function MapScreen({ navigation }) {
   const [cities, setCities] = useState([]);
   const [loadingDel, setLoadingDel] = useState(false);
   const [loadingCity, setLoadingCity] = useState(false);
-
-  const mosqueIcon = require('../../assets/mosque.png');
 
   useEffect(() => {
     (async () => {
@@ -63,15 +62,18 @@ export default function MapScreen({ navigation }) {
     })();
   }, [del]);
 
+
   const markers = useMemo(() => {
     const arr = Array.isArray(mosques) ? mosques : [];
     const g = gov.trim().toLowerCase();
     const d = del.trim().toLowerCase();
     const c = city.trim().toLowerCase();
-    
+    const s = search.trim().toLowerCase(); 
+
     let filtered = arr;
+    
     if (g || d || c) {
-      filtered = arr.filter(m => {
+      filtered = filtered.filter(m => {
         const mg = (m.governorate || '').toLowerCase();
         const md = (m.delegation || '').toLowerCase();
         const mc = (m.city || '').toLowerCase();
@@ -79,147 +81,141 @@ export default function MapScreen({ navigation }) {
       });
     }
 
-    return filtered.map((m) => ({
+    if (s) {
+        filtered = filtered.filter(m => (m.arabic_name || '').toLowerCase().includes(s));
+    }
+
+    return filtered.filter(m => m.latitude && m.longitude).map((m) => ({
       key: m.isSuggestion ? `s_${m.id}` : `m_${m.id}`,
       id: m.id,
+      mosque: m, 
       isSuggestion: !!m.isSuggestion,
       title: m.arabic_name || m.type || 'Mosque',
       isPending: !m.approved,
-      coordinate: { latitude: m.latitude, longitude: m.longitude },
+      coordinate: { latitude: parseFloat(m.latitude), longitude: parseFloat(m.longitude) },
     }));
-  }, [mosques, gov, del, city]);
+  }, [mosques, gov, del, city, search]);
 
   const governorates = ['All', ...GOVS];
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerOverlay}>
+         <View style={styles.searchBar}>
+             <MaterialCommunityIcons name="magnify" size={24} color="#666" />
+             <TextInput 
+                style={styles.searchInput} 
+                placeholder="Search map... / بحث..." 
+                value={search}
+                onChangeText={setSearch}
+             />
+             {search.length > 0 && (
+                 <TouchableOpacity onPress={()=>setSearch('')}>
+                     <MaterialCommunityIcons name="close" size={20} color="#666" />
+                 </TouchableOpacity>
+             )}
+         </View>
+         <View style={styles.filtersRow}>
+             <FilterChip label={gov || "Gov"} onPress={()=>setGovPickerOpen(true)} active={!!gov} />
+             <FilterChip label={del || "Del"} onPress={()=>{if(gov) setDelPickerOpen(true)}} active={!!del} disabled={!gov} />
+             <FilterChip label={city || "City"} onPress={()=>{if(del) setCityPickerOpen(true)}} active={!!city} disabled={!del} />
+             {(gov || del || city) && (
+                 <TouchableOpacity onPress={() => {setGov(''); setDel(''); setCity('');}}>
+                     <MaterialCommunityIcons name="filter-off" size={24} color={theme.colors.error} />
+                 </TouchableOpacity>
+             )}
+         </View>
+      </View>
+
       {region ? (
         <MapView
           style={styles.map}
           provider={PROVIDER_GOOGLE}
           initialRegion={region}
-          showsUserLocation
         >
-          {markers.map((mk) => (
-            <Marker 
-              key={mk.key} 
-              coordinate={mk.coordinate} 
-              image={mosqueIcon}
-              opacity={mk.isPending ? 0.6 : 1.0} // visual cue for pending
-            >
-              <Callout onPress={() => navigation.navigate('MosqueDetail', { id: mk.id, isSuggestion: mk.isSuggestion })}>
-                <View style={styles.callout}>
-                  <Text style={styles.calloutTitle}>{mk.title} {mk.isPending ? '(Pending)' : ''}</Text>
-                  <Text style={styles.calloutLink}>Details</Text>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
+            {markers.map(marker => (
+                <Marker
+                    key={marker.key}
+                    coordinate={marker.coordinate}
+                    title={marker.title}
+                    description={marker.isSuggestion ? "Suggestion (Tap for info)" : "Verified Mosque"}
+                    pinColor={marker.isSuggestion ? 'orange' : theme.colors.primary}
+                    onCalloutPress={() => navigation.navigate('MosqueDetail', { mosque: marker.mosque, isSuggestion: marker.isSuggestion })}
+                >
+                     <Callout onPress={() => navigation.navigate('MosqueDetail', { mosque: marker.mosque, isSuggestion: marker.isSuggestion })}>
+                          <View style={{padding: 5, alignItems: 'center', minWidth: 100}}>
+                              <Text style={{fontWeight: 'bold', fontSize: 14}}>{marker.title}</Text>
+                              <Text style={{fontSize: 12, color: marker.isSuggestion ? 'orange' : '#666', marginBottom: 2}}>
+                                  {marker.isSuggestion ? 'Pending Confirmation' : 'Verified'}
+                              </Text>
+                              <Text style={{fontSize: 10, color: theme.colors.primary}}>Tap for details</Text>
+                          </View>
+                     </Callout>
+                </Marker>
+            ))}
         </MapView>
-      ) : (
-        <FullScreenLoader message={error ? String(error) : 'جارٍ تحميل الخريطة…'} />
-      )}
-      
-      {/* Filters Overlay */}
-      <View style={styles.filterBar}>
-        <View style={styles.filterRow}>
-            {/* Filter Buttons */}
-              <TouchableOpacity style={styles.filterInput} onPress={() => setGovPickerOpen(true)}>
-                <Text style={{ color: theme.colors.text }} numberOfLines={1}>{gov || 'Gov / ولاية'}</Text>
-                <MaterialCommunityIcons name="chevron-down" size={16} color={theme.colors.muted} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={[styles.filterInput, !gov && { opacity: 0.6 }]} disabled={!gov} onPress={() => setDelPickerOpen(true)}>
-                <Text style={{ color: theme.colors.text }} numberOfLines={1}>{del || 'Del / معتمدية'}</Text>
-                <MaterialCommunityIcons name="chevron-down" size={16} color={theme.colors.muted} />
-              </TouchableOpacity>
-
-              {(gov || del || city) ? (
-                <TouchableOpacity style={[styles.filterInput, { flex: 0, paddingHorizontal: 12, backgroundColor: theme.colors.primary }]} onPress={() => { setGov(''); setDel(''); setCity(''); }}>
-                  <MaterialCommunityIcons name="filter-off" size={16} color="#fff" />
-                </TouchableOpacity>
-              ) : null}
-        </View>
-
-        {/* Pending Mosques Section */}
-        <TouchableOpacity 
-          style={styles.pendingBtn}
-          onPress={() => navigation.navigate('Tabs', { 
-            screen: 'ListTab',
-            params: { filter: 'pending' } 
-          })}
-        >
-          <MaterialCommunityIcons name="clock-outline" size={16} color="#fff" />
-          <Text style={styles.pendingText}>Pending Mosques ({mosques.filter(m => m.approved === false).length})</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal visible={govPickerOpen} transparent animationType="fade" onRequestClose={() => setGovPickerOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <FlatList
-              data={governorates}
-              keyExtractor={(item, idx) => String(idx)}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.optionRow} onPress={() => { setGov(item === 'All' ? '' : item); setGovPickerOpen(false); }}>
-                  <Text style={styles.optionText}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={styles.modalClose} onPress={() => setGovPickerOpen(false)}><Text style={styles.modalCloseText}>Close</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={delPickerOpen} transparent animationType="fade" onRequestClose={() => setDelPickerOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-             {loadingDel ? <ActivityIndicator color={theme.colors.primary} /> : (
-              <FlatList
-                data={['All', ...delegations]}
-                keyExtractor={(item, idx) => String(idx)}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.optionRow} onPress={() => { setDel(item === 'All' ? '' : item); setDelPickerOpen(false); }}>
-                    <Text style={styles.optionText}>{item}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-             )}
-            <TouchableOpacity style={styles.modalClose} onPress={() => setDelPickerOpen(false)}><Text style={styles.modalCloseText}>Close</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Loading overlay while fetching mosques */}
-      {loading && <FullScreenLoader message="جارٍ تحميل المساجد…" />}
-      {!loading && error ? (
-        <View style={styles.errorBar}><Text style={styles.errorText}>{error}</Text></View>
       ) : null}
+
+      <SimplePicker visible={govPickerOpen} data={governorates} onClose={()=>setGovPickerOpen(false)} onSelect={(v)=>{setGov(v==='All'?'':v); setGovPickerOpen(false);}} />
+      <SimplePicker visible={delPickerOpen} data={delegations} onClose={()=>setDelPickerOpen(false)} onSelect={(v)=>{setDel(v); setDelPickerOpen(false);}} />
+      <SimplePicker visible={cityPickerOpen} data={cities} onClose={()=>setCityPickerOpen(false)} onSelect={(v)=>{setCity(v); setCityPickerOpen(false);}} />
+    
     </View>
   );
 }
 
+const FilterChip = ({ label, onPress, active, disabled }) => (
+    <TouchableOpacity 
+        style={[styles.chip, active && styles.chipActive, disabled && styles.chipDisabled]} 
+        onPress={onPress} 
+        disabled={disabled}
+    >
+        <Text style={[styles.chipText, active && styles.chipTextActive, disabled && {color:'#aaa'}]}>
+            {label.length > 10 ? label.substring(0,8)+'..' : label}
+        </Text>
+        <MaterialCommunityIcons name="chevron-down" size={14} color={active ? '#fff' : '#666'} />
+    </TouchableOpacity>
+);
+
+const SimplePicker = ({ visible, data, onClose, onSelect }) => (
+    <Modal visible={visible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+                <View style={{flexDirection:'row', justifyContent:'space-between', padding:10, borderBottomWidth:1, borderBottomColor:'#eee'}}>
+                    <Text style={{fontSize: 18, fontWeight: 'bold'}}>Select</Text>
+                    <TouchableOpacity onPress={onClose}><Text style={{fontSize: 18, color:'blue'}}>Close</Text></TouchableOpacity>
+                </View>
+                {data.length === 0 ? <ActivityIndicator style={{marginTop: 20}} /> : (
+                <FlatList data={data} keyExtractor={i=>i} renderItem={({item}) => (
+                    <TouchableOpacity onPress={()=>onSelect(item)} style={{padding: 15, borderBottomWidth: 1, borderBottomColor: '#f9f9f9'}}>
+                        <Text style={{textAlign: 'center', fontSize: 16}}>{item}</Text>
+                    </TouchableOpacity>
+                )} />
+                )}
+            </View>
+        </View>
+    </Modal>
+);
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  map: { width, height },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  muted: { color: theme.colors.muted },
-  callout: { maxWidth: 200 },
-  calloutTitle: { fontFamily: 'Cairo-Bold', marginBottom: 4 },
-  calloutLink: { color: theme.colors.primary },
-  errorBar: { position: 'absolute', bottom: 12, left: 12, right: 12, backgroundColor: '#fee', padding: 8, borderRadius: 8 },
-  errorText: { color: '#900' },
-  filterBar: { position: 'absolute', top: 12, left: 12, right: 12, gap: 8 },
-  filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  filterInput: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 3 },
-  filterCount: { marginLeft: 8, color: theme.colors.muted },
-  pendingBtn: { backgroundColor: theme.colors.secondary, borderRadius: 8, padding: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, elevation: 3 },
-  pendingText: { color: '#fff', fontFamily: 'Cairo-Bold', fontSize: 12 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
-  modalCard: { width: '85%', maxHeight: '70%', backgroundColor: '#fff', borderRadius: 12, padding: 12 },
-  optionRow: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },
-  optionText: { color: theme.colors.text, fontSize: 16, fontFamily: 'Cairo-Medium' },
-  modalClose: { marginTop: 8, alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: theme.colors.primary, borderRadius: 8 },
-  modalCloseText: { color: '#fff' },
-  
+  container: { flex: 1 },
+  map: { flex: 1 },
+  headerOverlay: {
+      position: 'absolute', top: 50, left: 10, right: 10, zIndex: 10,
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderRadius: 12, padding: 10,
+      elevation: 5, shadowColor: '#000', shadowOffset: {width:0, height:2}, shadowOpacity: 0.2
+  },
+  searchBar: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 8, paddingHorizontal: 10, height: 40, marginBottom: 10
+  },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, fontFamily: 'Cairo-Regular', textAlign: 'right' },
+  filtersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd' },
+  chipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  chipDisabled: { backgroundColor: '#f5f5f5', borderColor: '#eee' },
+  chipText: { fontSize: 12, marginRight: 4, color: '#333' },
+  chipTextActive: { color: '#fff' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%' }
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -6,6 +6,7 @@ import MapScreen from '../screens/MapScreen';
 import MosqueDetailScreen from '../screens/MosqueDetailScreen';
 import ListScreen from '../screens/ListScreen';
 import LoginScreen from '../screens/LoginScreen';
+import AdminScreen from '../screens/AdminScreen'; // New Import
 import { View, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -14,12 +15,16 @@ import AddMosqueScreen from '../screens/AddMosqueScreen';
 import EditMosqueScreen from '../screens/EditMosqueScreen';
 import PrayerTimesScreen from '../screens/PrayerTimesScreen';
 import ReviewScreen from '../screens/ReviewScreen';
+import NearbyMosquesScreen from '../screens/NearbyMosquesScreen';
+import TasbihScreen from '../screens/TasbihScreen';
 import { theme } from '../theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function Tabs() {
+  const { role } = useAuth(); // Get role from context
+
   return (
     <Tab.Navigator
       initialRouteName="HomeTab"
@@ -34,6 +39,18 @@ function Tabs() {
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Home', tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="home-outline" color={color} size={28} />) }} />
       <Tab.Screen name="MapTab" component={MapScreen} options={{ title: 'Map', tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="map-outline" color={color} size={28} />) }} />
       <Tab.Screen name="ListTab" component={ListScreen} options={{ title: 'List', tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="format-list-bulleted" color={color} size={28} />) }} />
+      
+      {/* Conditionally render Admin Tab */}
+      {(role === 'admin' || role === 'moderator') && (
+        <Tab.Screen 
+            name="AdminTab" 
+            component={AdminScreen} 
+            options={{ 
+                title: 'Admin', 
+                tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="shield-account" color={color} size={28} />) 
+            }} 
+        />
+      )}
     </Tab.Navigator>
   );
 }
@@ -61,27 +78,29 @@ export default function AppNavigator() {
             headerShadowVisible: false,
           }}
         >
-          <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-          <Stack.Screen name="MosqueDetail" component={MosqueDetailScreen} options={({ navigation }) => ({ 
-            title: 'Mosque',
-            headerRight: () => (
-              <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
-            )
-          })} />
-          <Stack.Screen name="AddMosque" component={AddMosqueScreen} options={({ navigation }) => ({ 
-            title: 'Add Mosque',
-            headerRight: () => (
-              <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
-            )
-          })} />
-          <Stack.Screen name="EditMosque" component={EditMosqueScreen} options={({ navigation }) => ({ 
-            title: 'Suggest Edit',
-            headerRight: () => (
-              <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
-            )
-          })} />
-          <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} options={{ title: 'Prayer Times' }} />
-          <Stack.Screen name="Review" component={ReviewScreen} options={{ title: 'Add Review' }} />
+            <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+            <Stack.Screen name="MosqueDetail" component={MosqueDetailScreen} options={({ navigation }) => ({ 
+                title: 'Mosque',
+                headerRight: () => (
+                <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
+                )
+            })} />
+            <Stack.Screen name="AddMosque" component={AddMosqueScreen} options={({ navigation }) => ({ 
+                title: 'Add Mosque',
+                headerRight: () => (
+                <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
+                )
+            })} />
+            <Stack.Screen name="EditMosque" component={EditMosqueScreen} options={({ navigation }) => ({ 
+                title: 'Suggest Edit',
+                headerRight: () => (
+                <MaterialCommunityIcons name="home" size={22} style={{ marginRight: 12 }} onPress={() => navigation.navigate('HomeTab')} />
+                )
+            })} />
+            <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} options={{ title: 'Prayer Times' }} />
+            <Stack.Screen name="Review" component={ReviewScreen} options={{ title: 'Add Review' }} />
+            <Stack.Screen name="NearbyMosques" component={NearbyMosquesScreen} options={{ title: 'Nearby Mosques' }} />
+            <Stack.Screen name="Tasbih" component={TasbihScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
