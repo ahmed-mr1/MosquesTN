@@ -1,7 +1,7 @@
-from flask_smorest import Blueprint, abort
+﻿from flask_smorest import Blueprint, abort
 from flask.views import MethodView
 from ..extensions import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..models import MosqueSuggestion
 from ..utils.facilities import sanitize_facilities
 from ..schemas.suggestion import MosqueSuggestionCreateSchema, MosqueSuggestionSchema
@@ -19,7 +19,11 @@ suggestions_bp = Blueprint(
 @suggestions_bp.route("/mosques/pending")
 class PendingSuggestionsResource(MethodView):
     @suggestions_bp.response(200, MosqueSuggestionSchema(many=True))
+    @jwt_required()  # ADDING SECURITY HERE
     def get(self):
+        claims = get_jwt()
+        if claims.get("role") not in ("admin", "moderator"):
+             abort(403, message="Access denied")
         items = MosqueSuggestion.query.filter_by(status='pending_approval').order_by(MosqueSuggestion.created_at.desc()).all()
         return items
 
@@ -49,6 +53,11 @@ class MosqueSuggestionsResource(MethodView):
     @suggestions_bp.response(201, MosqueSuggestionSchema)
     @jwt_required()
     def post(self, data):
+        claims = get_jwt()
+        # If user explicitly wants "Authenticated User" to NOT post:
+        # if claims.get("role") == "user": abort(403, "Users cannot post")
+        # But context says they can. I will start by leaving it open but logging identity.
+
         governorate = (data.get("governorate") or "").strip()
         if not governorate:
             abort(400, message="'governorate' is required")
@@ -81,7 +90,6 @@ class MosqueSuggestionsResource(MethodView):
             created_by_user_id=created_by_user_id,
         )
 
-        # AI moderation
         mod_input = " ".join([
             data.get("arabic_name") or "",
             data.get("arabic_name") or "",
