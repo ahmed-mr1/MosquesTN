@@ -30,6 +30,23 @@ class MosqueEditsResource(MethodView):
             abort(401, message="Invalid token identity")
         patch_in = data.get("patch") or {}
         patch = {}
+
+        # Basic Info & Location
+        if "arabic_name" in patch_in:
+            patch["arabic_name"] = patch_in.get("arabic_name")
+        if "type" in patch_in:
+            patch["type"] = patch_in.get("type")
+        if "governorate" in patch_in:
+            patch["governorate"] = patch_in.get("governorate")
+        if "delegation" in patch_in:
+            patch["delegation"] = patch_in.get("delegation")
+        if "city" in patch_in:
+            patch["city"] = patch_in.get("city")
+        if "latitude" in patch_in:
+            patch["latitude"] = patch_in.get("latitude")
+        if "longitude" in patch_in:
+            patch["longitude"] = patch_in.get("longitude")
+            
         if "address" in patch_in:
             patch["address"] = (patch_in.get("address") or "").strip()
         # Removed neighborhood

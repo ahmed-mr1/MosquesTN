@@ -30,7 +30,11 @@ def list_suggestions():
     
     q = MosqueSuggestion.query
     if status and status != 'all':
-        q = q.filter_by(status=status)
+        # Show both legacy and new pending statuses
+        if status in ("pending", "pending_approval"):
+            q = q.filter(MosqueSuggestion.status.in_(["pending", "pending_approval"]))
+        else:
+            q = q.filter_by(status=status)
         
     return q.order_by(MosqueSuggestion.created_at.desc()).all()
 
@@ -46,9 +50,20 @@ def approve_suggestion_route(suggestion_id: int):
     s = MosqueSuggestion.query.get(suggestion_id)
     if not s:
         abort(404, message="Suggestion not found")
-    if s.status != "approved":
+        
+    if s.status == "approved":
+        return s
+        
+    try:
         approve_suggestion(s)
         db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        # Return the actual error message to the client
+        return {"message": f"Approval failed: {str(e)}", "error_type": type(e).__name__}, 500
+        
     return s
 
 
@@ -97,7 +112,11 @@ def approve_review(review_id: int):
     if not r:
         abort(404, message="Review not found")
     r.status = "approved"
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        abort(500, message=f"Review approval failed: {str(e)}")
     return r
 
 
@@ -147,7 +166,15 @@ def list_reviews():
     mosque_id = request.args.get("mosque_id")
     q = Review.query
     if status and status != 'all':
-        q = q.filter_by(status=status)
+        # Show both legacy and new status values for compatibility
+        if status in ("pending", "pending_approval"):
+            q = q.filter(Review.status.in_(["pending", "pending_approval"]))
+        elif status in ("approved", "accepted"):  # handle both
+            q = q.filter(Review.status.in_(["approved", "accepted"]))
+        elif status in ("rejected", "denied"):
+            q = q.filter(Review.status.in_(["rejected", "denied"]))
+        else:
+            q = q.filter_by(status=status)
     if mosque_id:
         try:
             mid = int(mosque_id)
@@ -190,8 +217,13 @@ def approve_edit(edit_id: int):
         abort(404, message="Edit not found")
         
     if e.status != "approved":
-        approve_edit_suggestion(e)
-        db.session.commit()
+        try:
+            approve_edit_suggestion(e)
+            db.session.commit()
+        except Exception as err:
+            db.session.rollback()
+            abort(500, message=f"Edit approval failed: {str(err)}")
+            
     return e
 
 

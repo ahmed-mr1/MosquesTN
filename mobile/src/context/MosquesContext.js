@@ -27,7 +27,7 @@ export function MosquesProvider({ children }) {
         // If we got less than limit, we are done
         if (!Array.isArray(chunk) || chunk.length < PAGE_LIMIT) break;
         offset += PAGE_LIMIT;
-        if (offset > 1000) break; 
+        if (offset > 1000) break;
       }
 
       // 2. Fetch Pending/Suggested Mosques
@@ -43,7 +43,7 @@ export function MosquesProvider({ children }) {
 
       // 3. Merge
       setMosques([...approvedList, ...pendingList]);
-      
+
       setLastUpdated(new Date());
     } catch (e) {
       setError(e?.message || String(e));

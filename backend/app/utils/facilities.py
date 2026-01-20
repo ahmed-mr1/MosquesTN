@@ -1,17 +1,21 @@
 from typing import Any, Dict, List
 
 
+
+# Expanded to match all keys used by the mobile app
 FACILITY_OPTIONS: List[Dict[str, str]] = [
-    {"key": "women_section", "label": "Women section"},
-    {"key": "wudu", "label": "Ablution (Wudu)"},
-    {"key": "toilets", "label": "Toilets"},
+    {"key": "women_section", "label": "Women's Section"},
+    {"key": "wudu", "label": "Wudu Area"},
+    {"key": "men_bathrooms", "label": "Men's Bathrooms"},
+    {"key": "women_bathrooms", "label": "Women's Bathrooms"},
     {"key": "parking", "label": "Parking"},
-    {"key": "accessibility", "label": "Wheelchair accessible"},
-    {"key": "heating_cooling", "label": "AC/Heating"},
+    {"key": "accessibility", "label": "Accessible"},
+    {"key": "ac", "label": "A/C"},
     {"key": "library", "label": "Library"},
-    {"key": "education_rooms", "label": "Education rooms"},
-    {"key": "funeral_service", "label": "Funeral service"},
-    {"key": "ramadan_iftaar", "label": "Ramadan Iftaar"},
+    {"key": "quran_school", "label": "Quran School"},
+    {"key": "daily_prayers", "label": "Daily Prayers"},
+    {"key": "jumua_prayer", "label": "Jumuah Prayer"},
+    {"key": "morgue", "label": "Funeral Prayer"},
 ]
 
 FACILITY_KEYS = {item["key"] for item in FACILITY_OPTIONS}

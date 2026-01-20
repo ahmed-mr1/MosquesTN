@@ -119,8 +119,7 @@ export async function uploadImage(uri) {
 
 // Edit Suggestions
 export async function suggestMosqueEdit(mosqueId, patch) {
-  const { data } = await api.post('/edits', {
-    mosque_id: mosqueId,
+  const { data } = await api.post(`/suggestions/mosques/${mosqueId}/edits`, {
     patch: patch
   });
   return data;

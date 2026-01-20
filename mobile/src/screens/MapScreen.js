@@ -139,6 +139,7 @@ export default function MapScreen({ navigation }) {
                     coordinate={marker.coordinate}
                     title={marker.title}
                     description={marker.isSuggestion ? "Suggestion (Tap for info)" : "Verified Mosque"}
+                    image={!marker.isSuggestion ? require('../../assets/mosque.png') : undefined}
                     pinColor={marker.isSuggestion ? 'orange' : theme.colors.primary}
                     onCalloutPress={() => navigation.navigate('MosqueDetail', { mosque: marker.mosque, isSuggestion: marker.isSuggestion })}
                 >

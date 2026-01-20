@@ -6,6 +6,21 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 
+const FACILITY_OPTS = {
+    women_section: { label: "Women's Section / مصلى نساء", icon: "human-female" },
+    wudu: { label: "Wudu Area / ميضأة", icon: "water" },
+    men_bathrooms: { label: "Men's Bathrooms / دورة مياه رجال", icon: "toilet" },
+    women_bathrooms: { label: "Women's Bathrooms / دورة مياه نساء", icon: "toilet" },
+    parking: { label: "Parking / موقف سيارات", icon: "car" },
+    accessibility: { label: "Accessible / ولوج ذوي الاحتياجات", icon: "wheelchair-accessibility" },
+    ac: { label: "A/C / مكيف", icon: "air-conditioner" },
+    library: { label: "Library / مكتبة", icon: "book-open-variant" },
+    quran_school: { label: "Quran School / كتاب", icon: "school" },
+    daily_prayers: { label: "Daily Prayers / الصلوات الخمس", icon: "mosque" },
+    jumua_prayer: { label: "Jumuah Prayer / صلاة الجمعة", icon: "account-group" },
+    morgue: { label: "Funeral Prayer / صلاة الجنازة", icon: "hand-heart" },
+};
+
 export default function AdminScreen() {
   const { signOut } = useAuth();
   const [filter, setFilter] = useState('pending');
@@ -24,7 +39,10 @@ export default function AdminScreen() {
       
       let statusParam = filter;
       if (filter === 'all') statusParam = 'all';
-      else if (filter === 'pending' && tab === 'mosques') statusParam = 'pending_approval';
+      else if (filter === 'pending') {
+          if (tab === 'mosques') statusParam = 'pending_approval';
+          else statusParam = 'pending';
+      }
 
       const { data } = await api.get(endpoint, { params: { status: statusParam } });
       setItems(data);
@@ -57,7 +75,10 @@ export default function AdminScreen() {
         setSelectedItem(null); 
         loadData();
       } catch (e) {
-        Alert.alert("Action Failed", e?.response?.data?.message || "Operation failed");
+        // Detailed error logging
+        const errMsg = e?.response?.data?.message || e.message || "Operation failed";
+        console.error("Action Error:", e?.response?.status, e?.response?.data);
+        Alert.alert("Action Failed", errMsg);
       }
   };
 
@@ -107,15 +128,25 @@ export default function AdminScreen() {
     if(!selectedItem) return null;
     const item = selectedItem;
 
-    // Helper to format JSON nicely
-    const formatValue = (val) => {
-        if (typeof val === 'boolean') return val ? 'Yes / نعم' : 'No / لا';
-        if (typeof val === 'object' && val !== null) {
-            return Object.entries(val)
-                .map(([k,v]) => `${k.replace(/_/g, ' ')}: ${v === true ? 'Yes' : v}`)
-                .join('\n');
-        }
-        return val;
+    // Helper to render facilities
+    const renderFacilities = (facilities) => {
+        if (!facilities) return <Text style={styles.value}>-</Text>;
+        const items = Object.entries(facilities).filter(([_, v]) => v === true);
+        if (items.length === 0) return <Text style={styles.value}>None listed</Text>;
+
+        return (
+            <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 5}}>
+                {items.map(([key, _]) => {
+                    const conf = FACILITY_OPTS[key] || { label: key.replace(/_/g, ' '), icon: 'check-circle-outline' };
+                    return (
+                        <View key={key} style={styles.facilityChip}>
+                            <MaterialCommunityIcons name={conf.icon} size={16} color={theme.colors.primary} />
+                            <Text style={styles.facilityText}>{conf.label}</Text>
+                        </View>
+                    );
+                })}
+            </View>
+        );
     };
 
     return (
@@ -132,8 +163,8 @@ export default function AdminScreen() {
                 <ScrollView contentContainerStyle={{ padding: 20 }}>
                      <View style={[styles.detailBlock, { borderLeftColor: getStatusColor(item.status) }]}>
                          <Text style={styles.label}>Status</Text>
-                         <Text style={[styles.value, { color: getStatusColor(item.status), fontWeight: 'bold' }]}>{item.status.toUpperCase()}</Text>
-                         <Text style={styles.label}>ID: <Text style={styles.value}>{item.id}</Text></Text>
+                         <Text style={[styles.value, { color: getStatusColor(item.status), fontWeight: 'bold' }]}>{item.status ? item.status.toUpperCase() : '-'}</Text>
+                         <Text style={styles.label}>Suggestion ID: <Text style={styles.value}>{item.id}</Text></Text>
                      </View>
 
                      {tab === 'mosques' && (
@@ -146,9 +177,7 @@ export default function AdminScreen() {
                             
                             <View style={{ marginTop: 10 }}>
                                 <Text style={styles.label}>Facilities:</Text>
-                                <View style={styles.jsonBox}>
-                                    <Text style={styles.jsonText}>{formatValue(item.facilities || {})}</Text>
-                                </View>
+                                {renderFacilities(item.facilities || {})}
                             </View>
                             
                              {item.image_url && (
@@ -178,15 +207,25 @@ export default function AdminScreen() {
                             <DetailRow label="Target Mosque ID" value={item.mosque_id} />
                             
                             <View style={{ marginTop: 10 }}>
-                                {item.patch && Object.entries(item.patch).map(([key, val]) => (
-                                    <View key={key} style={styles.diffRow}>
-                                         <Text style={styles.diffKey}>{key.replace(/_/g, ' ')}</Text>
-                                         <MaterialCommunityIcons name="arrow-right" size={16} color="#666" />
-                                         <Text style={styles.diffVal}>
-                                             {typeof val === 'object' ? JSON.stringify(val).replace(/[{}"]/g, '') : String(val)}
-                                         </Text>
-                                    </View>
-                                ))}
+                                {item.patch && Object.entries(item.patch).map(([key, val]) => {
+                                    if (key === 'facilities' && typeof val === 'object') {
+                                        return (
+                                            <View key={key} style={{ marginBottom: 12 }}>
+                                                <Text style={styles.diffKey}>Facilities (Update)</Text>
+                                                {renderFacilities(val)}
+                                            </View>
+                                        );
+                                    }
+                                    return (
+                                        <View key={key} style={styles.diffRow}>
+                                             <Text style={styles.diffKey}>{key.replace(/_/g, ' ')}</Text>
+                                             <MaterialCommunityIcons name="arrow-right" size={16} color="#666" />
+                                             <Text style={styles.diffVal}>
+                                                 {typeof val === 'object' ? JSON.stringify(val).replace(/[{}"]/g, '') : String(val)}
+                                             </Text>
+                                        </View>
+                                    );
+                                })}
                             </View>
                          </>
                      )}
@@ -310,5 +349,7 @@ const styles = StyleSheet.create({
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee', backgroundColor: '#fff' },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 8 },
-  actionBtnText: { color: '#fff', fontWeight: 'bold', marginLeft: 6 }
+  actionBtnText: { color: '#fff', fontWeight: 'bold', marginLeft: 6 },
+  facilityChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e3f2fd', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 16, borderWidth: 1, borderColor: '#bbdefb' },
+  facilityText: { marginLeft: 6, fontSize: 12, color: theme.colors.primary, fontWeight: '500' }
 });

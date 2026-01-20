@@ -14,7 +14,7 @@ export default function ListScreen() {
     const [search, setSearch] = useState('');
 
     const filteredItems = mosques.filter(m => {
-        if(!search) return true;
+        if (!search) return true;
         const term = search.toLowerCase();
         const name = (m.arabic_name || '').toLowerCase();
         const city = (m.city || '').toLowerCase();
@@ -22,23 +22,23 @@ export default function ListScreen() {
     });
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity 
-            style={[styles.card, item.isSuggestion && styles.suggestionCard]} 
+        <TouchableOpacity
+            style={[styles.card, item.isSuggestion && styles.suggestionCard]}
             onPress={() => navigation.navigate('MosqueDetail', { mosque: item, isSuggestion: item.isSuggestion })}
         >
-            <Image 
-                source={item.image_url ? { uri: item.image_url } : require('../../assets/adaptive-icon.png')} 
-                style={styles.image} 
+            <Image
+                source={item.image_url ? { uri: item.image_url } : require('../../assets/mosquetn.jpg')}
+                style={styles.image}
             />
             <View style={styles.info}>
                 <Text style={styles.name}>{item.arabic_name}</Text>
-                <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 5, alignItems: 'center'}}>
-                   <Text style={styles.address}>{item.city}, {item.governorate}</Text>
-                   <MaterialCommunityIcons name="map-marker" size={14} color="#666" />
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 5, alignItems: 'center' }}>
+                    <Text style={styles.address}>{item.city}, {item.governorate}</Text>
+                    <MaterialCommunityIcons name="map-marker" size={14} color="#666" />
                 </View>
                 {item.isSuggestion && (
                     <View style={styles.pendingBadge}>
-                        <MaterialCommunityIcons name="clock-outline" size={12} color="#fff" style={{marginRight: 4}} />
+                        <MaterialCommunityIcons name="clock-outline" size={12} color="#fff" style={{ marginRight: 4 }} />
                         <Text style={styles.pendingText}>Pending Confirmation ({item.confirmations_count || 0}/3)</Text>
                     </View>
                 )}
@@ -51,30 +51,30 @@ export default function ListScreen() {
             <View style={styles.header}>
                 <View style={styles.searchBox}>
                     <MaterialCommunityIcons name="magnify" size={24} color="#666" />
-                    <TextInput 
-                        style={styles.input} 
-                        placeholder="Search / ابحث عن مسجد..." 
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Search / ابحث عن مسجد..."
                         value={search}
                         onChangeText={setSearch}
                     />
-                     {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><MaterialCommunityIcons name="close" size={20} color="#666" /></TouchableOpacity>}
+                    {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><MaterialCommunityIcons name="close" size={20} color="#666" /></TouchableOpacity>}
                 </View>
                 {role !== 'guest' && (
-                    <TouchableOpacity onPress={() => navigation.navigate('AddMosque')} style={{marginLeft: 10}}>
+                    <TouchableOpacity onPress={() => navigation.navigate('AddMosque')} style={{ marginLeft: 10 }}>
                         <MaterialCommunityIcons name="plus-circle" size={40} color={theme.colors.primary} />
                     </TouchableOpacity>
                 )}
             </View>
-            
-            {loading && mosques.length === 0 ? <ActivityIndicator size="large" color={theme.colors.primary} style={{marginTop: 50}} /> : (
-                 <FlatList 
-                    data={filteredItems} 
-                    renderItem={renderItem} 
-                    keyExtractor={i => (i.isSuggestion ? 's_' : 'm_') + i.id} 
-                    contentContainerStyle={{padding: 16}} 
+
+            {loading && mosques.length === 0 ? <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 50 }} /> : (
+                <FlatList
+                    data={filteredItems}
+                    renderItem={renderItem}
+                    keyExtractor={i => (i.isSuggestion ? 's_' : 'm_') + i.id}
+                    contentContainerStyle={{ padding: 16 }}
                     refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
-                    ListEmptyComponent={<Text style={{textAlign:'center', marginTop: 20, color: '#666'}}>No mosques found.</Text>}
-                 />
+                    ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>No mosques found.</Text>}
+                />
             )}
         </SafeAreaView>
     );
