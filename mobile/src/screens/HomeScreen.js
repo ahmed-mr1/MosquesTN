@@ -5,6 +5,7 @@ import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import Entypo from '@expo/vector-icons/Entypo';
 
 export default function HomeScreen({ navigation }) {
   const [cityName, setCityName] = useState('Loading...');
@@ -172,9 +173,9 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate('PrayerTimes')} 
         />
         <ActionCard 
-          icon="dots-horizontal-circle-outline" 
-          title="Digital Tasbih" 
-          subtitle="مسبحة إلكترونية" 
+          icon="book-open-variant" 
+          title="Muslim Space" 
+          subtitle="فضاء المسلم" 
           color="#E74C3C" 
           onPress={() => navigation.navigate('Tasbih')} 
         />
