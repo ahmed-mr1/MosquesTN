@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - TunisianMosquesAPIDoc
+name: Build and deploy Node.js app to Azure Web App - Mosquesapidoc
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
 
       - name: npm install and build
         run: |
-          cd documentation-site 
+          cd documentation-site
           npm install
           npm run build
 
@@ -27,7 +27,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: documentation-site/dist 
+          path: documentation-site/dist
           overwrite: true
 
   deploy:
@@ -54,6 +54,6 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'TunisianMosquesAPIDoc'
+          app-name: 'Mosquesapidoc'
           slot-name: 'Production'
           package: .
