@@ -59,4 +59,6 @@ jobs:
           name: node-app
           # This must point to the dist folder inside documentation-site
           path: documentation-site/dist
+          overwrite: true
+
 
