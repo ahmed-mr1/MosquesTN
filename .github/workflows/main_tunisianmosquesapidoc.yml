@@ -39,23 +39,24 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: npm install and build
+        run: |
+          # Use the exact folder name from your screenshot
+          cd documentation-site 
+          npm install
+          npm run build
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
         with:
           name: node-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_65087500ECB14549BC8B99F1A9F3C929 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7A3978F7EBE64D61A84938764060A311 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E6DB5B8DFB2B4DFCBEBF43F21519A2CF }}
+          # This must point to the dist folder inside documentation-site
+          path: documentation-site/dist
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'TunisianMosquesAPIDoc'
-          slot-name: 'Production'
-          # Use '.' here because the artifact IS the dist folder now
-          package: .
